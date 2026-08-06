@@ -24,6 +24,14 @@ func! popdir#Open()
             return 1
     endfunc
 
+    func! s:Callback(id, result) closure
+        if a:result == -1
+            return
+        endif
+        let path = paths[a:result - 1]
+        execute "silent edit " . path
+    endfunc
+
     let cwd = getcwd()
     let paths = readdir(cwd)
     call sort(paths, function('s:compare'))
@@ -32,6 +40,7 @@ func! popdir#Open()
                 \ maxheight: g:popdir_maxheight,
                 \ minheight: min([len(paths), g:popdir_maxheight]),
                 \ title: printf(' %s: ', cwd_tilde),
+                \ callback: function('s:Callback'),
                 \})
 endfunc
 
