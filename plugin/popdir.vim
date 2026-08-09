@@ -11,7 +11,7 @@ let g:loaded_popdir = 1
 let s:cpo_save = &cpo
 set cpo&vim
 
-command PopDir call popdir#Open()
+command PopDir call popdir#open()
 
 let &cpo = s:cpo_save
 unlet s:cpo_save
