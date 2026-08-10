@@ -10,10 +10,7 @@ if !exists('g:popdir_maxheight')
     let g:popdir_maxheight = 40
 endif
 
-" func! popdir#open(dirpath = getcwd())
 func! popdir#open(dirpath = '')
-    " dirpathが与えられなければ現在のファイルの親ディレクトリをdirpathとする
-    " 現在のファイルが存在しなければカレントディレクトリをdirpathとする
     let dirpath = a:dirpath
     if empty(dirpath)
         let curpath = expand('%:p')
@@ -24,8 +21,7 @@ func! popdir#open(dirpath = '')
         endif
     endif
 
-    let names = s:sort(s:listdir(dirpath))
-
+    let names = s:listdir(dirpath)
     let winid = popup_menu(names, #{
                 \ maxheight: g:popdir_maxheight,
                 \ minheight: min([len(names), g:popdir_maxheight]),
@@ -33,16 +29,21 @@ func! popdir#open(dirpath = '')
                 \ callback: function('s:callback'),
                 \ filter: function('s:filter'),
                 \})
-    call setwinvar(winid, 'dirpath', dirpath)
-    call setwinvar(winid, 'names', names)
+    call s:setinfo(winid, dirpath, names)
 endfunc
 
-func! s:setinfo(dirpath, names)
-    " TODO
+func! s:setinfo(winid, dirpath, names)
+    call setwinvar(a:winid, 'dirpath', a:dirpath)
+    call setwinvar(a:winid, 'names', a:names)
 endfunc
 
-func! s:getinfo(dirpath, names)
-    " TODO
+func! s:getinfo(winid)
+    let dirpath = getwinvar(a:winid, 'dirpath')
+    let names = getwinvar(a:winid, 'names')
+    call win_execute(a:winid, 'let w:name = getline(".")')
+    let name = getwinvar(a:winid, 'name')
+    let isdir = name[-1:] == '/'
+    return [dirpath, names, s:trimslash(name), isdir]
 endfunc
 
 func! s:parent(path)
@@ -74,16 +75,12 @@ func! s:compare(a, b)
         return 1
 endfunc
 
-func! s:callback(id, result)
+func! s:callback(winid, result)
     if a:result == -1
         return
     endif
-    let dirpath = getwinvar(a:id, 'dirpath')
-    let names = getwinvar(a:id, 'names')
-    let name = names[a:result - 1]
-    " TODO: safe path construction
-    let path = dirpath . '/' . name
-    echohl path
+    let [dirpath, names, name, isdir] = s:getinfo(a:winid)
+    let path = $'{dirpath}/{name}'
     execute "silent edit " . path
 endfunc
 
@@ -105,39 +102,35 @@ func! s:listdir(dir)
         endif
         call add(paths, name)
     endfor
-    return paths
+    return s:sort(paths)
 endfunc
 
-func! s:filter(id, key)
-    let dirpath = getwinvar(a:id, 'dirpath')
-    let names = getwinvar(a:id, 'names')
+func! s:update(winid, dirpath)
+    let names = s:listdir(a:dirpath)
+    call s:setinfo(a:winid, a:dirpath, names)
+    call popup_settext(a:winid, names)
+    call popup_setoptions(a:winid, #{title: s:title(a:dirpath)})
+endfunc
+
+func! s:filter(winid, key)
+    let [dirpath, names, name, isdir] = s:getinfo(a:winid)
 
     " サブディレクトリを表示
     if a:key is# "\<Enter>"
-        call win_execute(a:id, 'let w:name = getline(".")')
-        let name = getwinvar(a:id, 'name')
-        let name_is_dir = name[-1:] == '/'
-        if name_is_dir
-            let subdir = $'{dirpath}/{s:trimslash(name)}'
-            call setwinvar(a:id, 'dirpath', subdir)
-            let names = s:listdir(subdir)
-            call setwinvar(a:id, 'names', names)
-            call popup_settext(a:id, names)
-            call popup_setoptions(a:id, #{title: s:title(subdir)})
+        if isdir
+            let subdir = $'{dirpath}/{name}'
+            call s:update(a:winid, subdir)
             return 1
         else
-            return popup_filter_menu(a:id, a:key)
+            return popup_filter_menu(a:winid, a:key)
         endif
     endif
 
     if a:key is# '-'
         " TODO: 一つ上のディレクトリに移動
+        " TODO: 移動する前のディレクトリを検索
         let parent = fnamemodify(dirpath, ':h')
-        call setwinvar(a:id, 'dirpath', parent)
-        let names = s:listdir(parent)
-        call setwinvar(a:id, 'names', names)
-        call popup_settext(a:id, names)
-        call popup_setoptions(a:id, #{title: s:title(parent)})
+        call s:update(a:winid, parent)
         return 1
     endif
 
@@ -149,5 +142,5 @@ func! s:filter(id, key)
         " TODO: 隠しファイルの表示をトグル
     endif
 
-    return popup_filter_menu(a:id, a:key)
+    return popup_filter_menu(a:winid, a:key)
 endfunc
