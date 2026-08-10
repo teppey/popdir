@@ -10,57 +10,86 @@ if !exists('g:popdir_maxheight')
     let g:popdir_maxheight = 40
 endif
 
-func! popdir#open()
-    func! s:compare(a, b) closure
-        let a_path = cwd . '/' . trim(a:a, '/', 2)
-        let b_path = cwd . '/' . trim(a:b, '/', 2)
-
-        let a_is_dir = a:a[-1:] == '/'
-        let b_is_dir = a:b[-1:] == '/'
-
-        if a_is_dir && !b_is_dir
-            return -1
-        elseif !a_is_dir && b_is_dir
-            return 1
-        endif
-
-        if a:a == a:b
-            return 0
-        elseif a:a < a:b
-            return -1
+" func! popdir#open(dirpath = getcwd())
+func! popdir#open(dirpath = '')
+    " dirpathが与えられなければ現在のファイルの親ディレクトリをdirpathとする
+    " 現在のファイルが存在しなければカレントディレクトリをdirpathとする
+    let dirpath = a:dirpath
+    if empty(dirpath)
+        let curpath = expand('%:p')
+        if empty(curpath)
+            let dirpath = getcwd()
         else
-            return 1
-    endfunc
-
-    func! s:callback(id, result) closure
-        if a:result == -1
-            return
+            let dirpath = s:parent(curpath)
         endif
-        call popup_settext(a:id, ['foo', 'bar', 'baz'])
-        return
-        let path = paths[a:result - 1]
-        execute "silent edit " . path
-    endfunc
+    endif
 
-    let cwd = getcwd()
-    let paths = []
-    for info in readdirex(cwd)
-        let name = info.name
-        if info.type == 'dir'
-            let name .= '/'
-        endif
-        call add(paths, name)
-    endfor
-    call sort(paths, function('s:compare'))
-    let cwd_tilde = substitute(cwd, $HOME, '~', '')
-    let winid = popup_menu(paths, #{
+    let names = s:sort(s:listdir(dirpath))
+
+    let winid = popup_menu(names, #{
                 \ maxheight: g:popdir_maxheight,
-                \ minheight: min([len(paths), g:popdir_maxheight]),
-                \ title: printf(' %s: ', cwd_tilde),
+                \ minheight: min([len(names), g:popdir_maxheight]),
+                \ title: s:title(dirpath),
                 \ callback: function('s:callback'),
                 \ filter: function('s:filter'),
                 \})
-    call setwinvar(winid, 'curdir', cwd)
+    call setwinvar(winid, 'dirpath', dirpath)
+    call setwinvar(winid, 'names', names)
+endfunc
+
+func! s:setinfo(dirpath, names)
+    " TODO
+endfunc
+
+func! s:getinfo(dirpath, names)
+    " TODO
+endfunc
+
+func! s:parent(path)
+    return fnamemodify(a:path, ':h')
+endfunc
+
+func! s:sort(names)
+    return sort(a:names, function('s:compare'))
+endfunc
+
+func! s:compare(a, b)
+    let a_is_dir = a:a[-1:] == '/'
+    let b_is_dir = a:b[-1:] == '/'
+
+    let a = s:trimslash(a:a)
+    let b = s:trimslash(a:b)
+
+    if a_is_dir && !b_is_dir
+        return -1
+    elseif !a_is_dir && b_is_dir
+        return 1
+    endif
+
+    if a:a == a:b
+        return 0
+    elseif a:a < a:b
+        return -1
+    else
+        return 1
+endfunc
+
+func! s:callback(id, result)
+    if a:result == -1
+        return
+    endif
+    let dirpath = getwinvar(a:id, 'dirpath')
+    let names = getwinvar(a:id, 'names')
+    let name = names[a:result - 1]
+    " TODO: safe path construction
+    let path = dirpath . '/' . name
+    echohl path
+    execute "silent edit " . path
+endfunc
+
+func! s:title(path)
+    let path_tilde = fnamemodify(a:path, ':~')
+    return $' {path_tilde}: '
 endfunc
 
 func! s:trimslash(s)
@@ -71,7 +100,7 @@ func! s:listdir(dir)
     let paths = []
     for info in readdirex(a:dir)
         let name = info.name
-        if info.type == 'dir'
+        if info.type ==# 'dir'
             let name .= '/'
         endif
         call add(paths, name)
@@ -80,31 +109,35 @@ func! s:listdir(dir)
 endfunc
 
 func! s:filter(id, key)
+    let dirpath = getwinvar(a:id, 'dirpath')
+    let names = getwinvar(a:id, 'names')
+
     " サブディレクトリを表示
     if a:key is# "\<Enter>"
         call win_execute(a:id, 'let w:name = getline(".")')
         let name = getwinvar(a:id, 'name')
-        let curdir = getwinvar(a:id, 'curdir')
         let name_is_dir = name[-1:] == '/'
         if name_is_dir
-            let subdir = $'{curdir}/{s:trimslash(name)}'
-            call setwinvar(a:id, 'curdir', subdir)
-            call popup_settext(a:id, s:listdir(subdir))
-            let title = fnamemodify(subdir, ':~')
-            call popup_setoptions(a:id, #{title: $' {title} '})
+            let subdir = $'{dirpath}/{s:trimslash(name)}'
+            call setwinvar(a:id, 'dirpath', subdir)
+            let names = s:listdir(subdir)
+            call setwinvar(a:id, 'names', names)
+            call popup_settext(a:id, names)
+            call popup_setoptions(a:id, #{title: s:title(subdir)})
+            return 1
+        else
+            return popup_filter_menu(a:id, a:key)
         endif
-        return 1
     endif
 
     if a:key is# '-'
         " TODO: 一つ上のディレクトリに移動
-        let curdir = getwinvar(a:id, 'curdir')
-        let parent = fnamemodify(curdir, ':h')
-        call setwinvar(a:id, 'curdir', parent)
-        " TODO: ソート
-        call popup_settext(a:id, s:listdir(parent))
-        let title = fnamemodify(parent, ':~')
-        call popup_setoptions(a:id, #{title: $' {title} '})
+        let parent = fnamemodify(dirpath, ':h')
+        call setwinvar(a:id, 'dirpath', parent)
+        let names = s:listdir(parent)
+        call setwinvar(a:id, 'names', names)
+        call popup_settext(a:id, names)
+        call popup_setoptions(a:id, #{title: s:title(parent)})
         return 1
     endif
 
