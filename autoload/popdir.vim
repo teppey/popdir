@@ -29,23 +29,30 @@ func! popdir#open(dirpath = '')
                 \ callback: function('s:callback'),
                 \ filter: function('s:filter'),
                 \})
-    call s:setinfo(winid, #{dirpath: dirpath, names: names})
+    call s:setinfo(winid, #{ dirpath: dirpath, names: names })
+endfunc
+
+func! s:newinfo()
+    return #{ dirpath: '', names: [], name: '', isdir: 0, char_stack: [] }
 endfunc
 
 func! s:setinfo(winid, data)
-    for [name, value] in items(a:data)
-        call setwinvar(a:winid, name, value)
+    let info = getwinvar(a:winid, 'info') ?? s:newinfo()
+    for key in keys(info)
+        if has_key(a:data, key)
+            let info[key] = a:data[key]
+        endif
     endfor
+    call setwinvar(a:winid, 'info', info)
 endfunc
 
 func! s:getinfo(winid)
-    let dirpath = getwinvar(a:winid, 'dirpath')
-    let names = getwinvar(a:winid, 'names')
+    let info = getwinvar(a:winid, 'info') ?? s:newinfo()
     call win_execute(a:winid, 'let w:name = getline(".")')
     let name = getwinvar(a:winid, 'name')
-    let isdir = name[-1:] == '/'
-    let char_stack = getwinvar(a:winid, 'char_stack')
-    return [dirpath, names, s:trimslash(name), isdir, char_stack]
+    let info.name = name
+    let info.isdir = name[-1:] == '/'
+    return info
 endfunc
 
 func! s:parent(path)
@@ -81,8 +88,8 @@ func! s:callback(winid, result)
     if a:result == -1
         return
     endif
-    let [dirpath, names, name, isdir, char_stack] = s:getinfo(a:winid)
-    let path = $'{dirpath}/{name}'
+    let info = s:getinfo(a:winid)
+    let path = $'{info.dirpath}/{info.name}'
     execute "silent edit " . path
 endfunc
 
@@ -97,9 +104,9 @@ endfunc
 
 func! s:listdir(dir)
     let paths = []
-    for info in readdirex(a:dir)
-        let name = info.name
-        if info.type ==# 'dir'
+    for d in readdirex(a:dir)
+        let name = d.name
+        if d.type ==# 'dir'
             let name .= '/'
         endif
         call add(paths, name)
@@ -109,18 +116,18 @@ endfunc
 
 func! s:update(winid, dirpath)
     let names = s:listdir(a:dirpath)
-    call s:setinfo(a:winid, #{dirpath: a:dirpath, names: names})
+    call s:setinfo(a:winid, #{ dirpath: a:dirpath, names: names })
     call popup_settext(a:winid, names)
-    call popup_setoptions(a:winid, #{title: s:title(a:dirpath)})
+    call popup_setoptions(a:winid, #{ title: s:title(a:dirpath) })
 endfunc
 
 func! s:filter(winid, key)
-    let [dirpath, names, name, isdir, char_stack] = s:getinfo(a:winid)
+    let info = s:getinfo(a:winid)
 
     " サブディレクトリを表示
     if a:key is# "\<Enter>"
-        if isdir
-            let subdir = $'{dirpath}/{name}'
+        if info.isdir
+            let subdir = $'{info.dirpath}/{info.name}'
             call s:update(a:winid, subdir)
             return 1
         else
@@ -131,7 +138,7 @@ func! s:filter(winid, key)
     if a:key is# '-'
         " TODO: 一つ上のディレクトリに移動
         " TODO: 移動する前のディレクトリを検索
-        let parent = fnamemodify(dirpath, ':h')
+        let parent = fnamemodify(info.dirpath, ':h')
         call s:update(a:winid, parent)
         return 1
     endif
