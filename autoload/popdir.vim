@@ -29,12 +29,13 @@ func! popdir#open(dirpath = '')
                 \ callback: function('s:callback'),
                 \ filter: function('s:filter'),
                 \})
-    call s:setinfo(winid, dirpath, names)
+    call s:setinfo(winid, #{dirpath: dirpath, names: names})
 endfunc
 
-func! s:setinfo(winid, dirpath, names)
-    call setwinvar(a:winid, 'dirpath', a:dirpath)
-    call setwinvar(a:winid, 'names', a:names)
+func! s:setinfo(winid, data)
+    for [name, value] in items(a:data)
+        call setwinvar(a:winid, name, value)
+    endfor
 endfunc
 
 func! s:getinfo(winid)
@@ -43,7 +44,8 @@ func! s:getinfo(winid)
     call win_execute(a:winid, 'let w:name = getline(".")')
     let name = getwinvar(a:winid, 'name')
     let isdir = name[-1:] == '/'
-    return [dirpath, names, s:trimslash(name), isdir]
+    let char_stack = getwinvar(a:winid, 'char_stack')
+    return [dirpath, names, s:trimslash(name), isdir, char_stack]
 endfunc
 
 func! s:parent(path)
@@ -79,7 +81,7 @@ func! s:callback(winid, result)
     if a:result == -1
         return
     endif
-    let [dirpath, names, name, isdir] = s:getinfo(a:winid)
+    let [dirpath, names, name, isdir, char_stack] = s:getinfo(a:winid)
     let path = $'{dirpath}/{name}'
     execute "silent edit " . path
 endfunc
@@ -107,13 +109,13 @@ endfunc
 
 func! s:update(winid, dirpath)
     let names = s:listdir(a:dirpath)
-    call s:setinfo(a:winid, a:dirpath, names)
+    call s:setinfo(a:winid, #{dirpath: a:dirpath, names: names})
     call popup_settext(a:winid, names)
     call popup_setoptions(a:winid, #{title: s:title(a:dirpath)})
 endfunc
 
 func! s:filter(winid, key)
-    let [dirpath, names, name, isdir] = s:getinfo(a:winid)
+    let [dirpath, names, name, isdir, char_stack] = s:getinfo(a:winid)
 
     " サブディレクトリを表示
     if a:key is# "\<Enter>"
@@ -131,6 +133,25 @@ func! s:filter(winid, key)
         " TODO: 移動する前のディレクトリを検索
         let parent = fnamemodify(dirpath, ':h')
         call s:update(a:winid, parent)
+        return 1
+    endif
+
+    " j: <count> lines downward
+    " k: <count lines upward
+    " H: Line <count> from top of window
+    " M: Middle line of window
+    " L: Line <count> from bottom of window
+    " <C-F>: Page down
+    " <C-B>: Page up
+    " TODO: 数値引数に対応
+    let command_as_is = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
+    if index(command_as_is, a:key) >= 0
+"        let num_arg = str2nr(join(char_stack, ''))
+"        if num_arg < 1
+"            let num_arg = 1
+"        endif
+        call win_execute(a:winid, $'normal! 1{a:key}')
+        "call setwinvar(a:id, 'char_stack', [])
         return 1
     endif
 
