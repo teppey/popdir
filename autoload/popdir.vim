@@ -36,12 +36,13 @@ func! s:newinfo()
     return #{ dirpath: '', names: [], name: '', isdir: 0, char_stack: [] }
 endfunc
 
-func! s:setinfo(winid, data)
+func! s:setinfo(winid, data) abort
     let info = getwinvar(a:winid, 'info') ?? s:newinfo()
-    for key in keys(info)
-        if has_key(a:data, key)
-            let info[key] = a:data[key]
+    for [key, value] in items(a:data)
+        if !has_key(info, key)
+            throw $'unexpected info key: {key}'
         endif
+        let info[key] = value
     endfor
     call setwinvar(a:winid, 'info', info)
 endfunc
@@ -50,7 +51,7 @@ func! s:getinfo(winid)
     let info = getwinvar(a:winid, 'info') ?? s:newinfo()
     call win_execute(a:winid, 'let w:name = getline(".")')
     let name = getwinvar(a:winid, 'name')
-    let info.name = name
+    let info.name = s:trimslash(name)
     let info.isdir = name[-1:] == '/'
     return info
 endfunc
