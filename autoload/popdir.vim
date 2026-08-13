@@ -99,10 +99,13 @@ func! s:trimslash(s)
     return trim(a:s, '/', 2)
 endfunc
 
-func! s:listdir(dir)
+func! s:listdir(dir, show_hidden = 0)
     let paths = []
     for d in readdirex(a:dir)
         let name = d.name
+        if !a:show_hidden && name[0] == '.'
+            continue
+        endif
         if d.type ==# 'dir'
             let name .= '/'
         endif
@@ -152,7 +155,7 @@ func! s:filter(winid, key)
     if a:key is# 'G'
         let num_arg = str2nr(join(info.char_stack, ''))
         if num_arg > 0
-            call win_execute(a:winid, printf('normal! %dG', num_arg))
+            call win_execute(a:winid, $'normal! {num_arg}G')
         else
             call win_execute(a:winid, 'normal! G')
         endif
@@ -167,15 +170,14 @@ func! s:filter(winid, key)
     " L: Line <count> from bottom of window
     " <C-F>: Page down
     " <C-B>: Page up
-    " TODO: 数値引数に対応
     let command_as_is = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
     if index(command_as_is, a:key) >= 0
-"        let num_arg = str2nr(join(char_stack, ''))
-"        if num_arg < 1
-"            let num_arg = 1
-"        endif
-        call win_execute(a:winid, $'normal! 1{a:key}')
-        "call setwinvar(a:id, 'char_stack', [])
+        let num_arg = str2nr(join(info.char_stack, ''))
+        if num_arg < 1
+            let num_arg = 1
+        endif
+        call win_execute(a:winid, $'normal! {num_arg}{a:key}')
+        let info.char_stack = []
         return 1
     endif
 
@@ -185,12 +187,12 @@ func! s:filter(winid, key)
         return 1
     endif
 
-    if a:key is# 'r'
-        " TODO: リロード
-    endif
-
     if a:key is# 'h'
         " TODO: 隠しファイルの表示をトグル
+    endif
+
+    if a:key is# 'r'
+        " TODO: リロード
     endif
 
     return popup_filter_menu(a:winid, a:key)
