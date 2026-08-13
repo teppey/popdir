@@ -6,10 +6,6 @@
 let s:cpo_save = &cpo
 set cpo&vim
 
-if !exists('g:popdir_maxheight')
-    let g:popdir_maxheight = 40
-endif
-
 func! popdir#open(dirpath = '')
     let dirpath = a:dirpath
     if empty(dirpath)
@@ -23,8 +19,8 @@ func! popdir#open(dirpath = '')
 
     let names = s:listdir(dirpath)
     let winid = popup_menu(names, #{
-                \ maxheight: g:popdir_maxheight,
-                \ minheight: min([len(names), g:popdir_maxheight]),
+                \ maxheight: 40,
+                \ minheight: 20,
                 \ title: s:title(dirpath),
                 \ callback: function('s:callback'),
                 \ filter: function('s:filter'),
@@ -136,11 +132,31 @@ func! s:filter(winid, key)
         endif
     endif
 
+    " 一つ上のディレクトリに移動
+    " TODO: 移動後に移動前のディレクトリ名にカーソルを移動(検索する？)
     if a:key is# '-'
-        " TODO: 一つ上のディレクトリに移動
-        " TODO: 移動する前のディレクトリを検索
         let parent = fnamemodify(info.dirpath, ':h')
         call s:update(a:winid, parent)
+        return 1
+    endif
+
+    " gg: Move to first line
+    " TODO: char_stack[-1] == 'g' でいいかも
+    if a:key is# 'g' && info.char_stack[:-1] == ['g']
+        let info.char_stack = []
+        call win_execute(a:winid, '1')
+        return 1
+    endif
+
+    " G: Goto line <count>, default last line
+    if a:key is# 'G'
+        let num_arg = str2nr(join(info.char_stack, ''))
+        if num_arg > 0
+            call win_execute(a:winid, printf('normal! %dG', num_arg))
+        else
+            call win_execute(a:winid, 'normal! G')
+        endif
+        let info.char_stack = []
         return 1
     endif
 
@@ -160,6 +176,12 @@ func! s:filter(winid, key)
 "        endif
         call win_execute(a:winid, $'normal! 1{a:key}')
         "call setwinvar(a:id, 'char_stack', [])
+        return 1
+    endif
+
+    " For `gg` and <count> arg
+    if a:key =~ '[gz0-9]'
+        call add(info.char_stack, a:key)
         return 1
     endif
 
