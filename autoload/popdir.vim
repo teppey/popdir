@@ -105,7 +105,6 @@ endfunc
 
 func! s:title(path)
     let path_tilde = fnamemodify(a:path, ':~')
-    " return $' {path_tilde}: '
     return $'  {path_tilde}  '
 endfunc
 
@@ -151,18 +150,30 @@ func! s:filter(winid, key)
     endif
 
     " 一つ上のディレクトリに移動
-    " TODO: 移動後に移動前のディレクトリ名にカーソルを移動(検索する？)
     if a:key is# '-'
-        let parent = fnamemodify(info.dirpath, ':h')
+        let prev_name = fnamemodify(info.dirpath, ':t')
+        let parent = s:parent(info.dirpath)
         call s:update(a:winid, parent)
+        call win_execute(a:winid, $"normal! /{prev_name}\<Enter>")
+        return 1
+    endif
+
+    " <Home>: Move to first line
+    if a:key is# "\<Home>"
+        call win_execute(a:winid, '1')
         return 1
     endif
 
     " gg: Move to first line
-    " TODO: char_stack[-1] == 'g' でいいかも
     if a:key is# 'g' && info.char_stack[:-1] == ['g']
         let info.char_stack = []
         call win_execute(a:winid, '1')
+        return 1
+    endif
+
+    " <End>: Move to last line
+    if a:key is# "\<End>"
+        call win_execute(a:winid, 'normal! G')
         return 1
     endif
 
@@ -199,6 +210,16 @@ func! s:filter(winid, key)
     " For `gg` and <count> arg
     if a:key =~ '[gz0-9]'
         call add(info.char_stack, a:key)
+        return 1
+    endif
+
+    " zz: Cursor line to center of window
+    " zt: Cursor line to top of window
+    " zb: Cursor line to bottom of window
+    let command_scroll_cursor = ['z', 't', 'b']
+    if index(command_scroll_cursor, a:key) >= 0 && get(info.char_stack, -1, '') ==# 'z'
+        let info.char_stack = []
+        call win_execute(a:winid, 'normal! z' . a:key)
         return 1
     endif
 
