@@ -6,6 +6,8 @@
 let s:cpo_save = &cpo
 set cpo&vim
 
+let g:popdir_show_hidden = 1
+
 func! popdir#open(dirpath = '')
     let dirpath = a:dirpath
     if empty(dirpath)
@@ -17,19 +19,30 @@ func! popdir#open(dirpath = '')
         endif
     endif
 
-    let names = s:listdir(dirpath)
+    let names = s:listdir(dirpath, g:popdir_show_hidden)
     let winid = popup_menu(names, #{
                 \ maxheight: 40,
                 \ minheight: 20,
                 \ title: s:title(dirpath),
                 \ callback: function('s:callback'),
                 \ filter: function('s:filter'),
-                \})
-    call s:setinfo(winid, #{ dirpath: dirpath, names: names })
+                \ })
+    call s:setinfo(winid, #{
+                \ dirpath: dirpath,
+                \ names: names,
+                \ show_hidden: g:popdir_show_hidden,
+                \ })
 endfunc
 
 func! s:newinfo()
-    return #{ dirpath: '', names: [], name: '', isdir: 0, char_stack: [] }
+    return #{
+                \ dirpath: '',
+                \ names: [],
+                \ name: '',
+                \ isdir: 0,
+                \ char_stack: [],
+                \ show_hidden: 0,
+                \ }
 endfunc
 
 func! s:setinfo(winid, data) abort
@@ -92,7 +105,8 @@ endfunc
 
 func! s:title(path)
     let path_tilde = fnamemodify(a:path, ':~')
-    return $' {path_tilde}: '
+    " return $' {path_tilde}: '
+    return $'  {path_tilde}  '
 endfunc
 
 func! s:trimslash(s)
@@ -115,7 +129,8 @@ func! s:listdir(dir, show_hidden = 0)
 endfunc
 
 func! s:update(winid, dirpath)
-    let names = s:listdir(a:dirpath)
+    let info = s:getinfo(a:winid)
+    let names = s:listdir(a:dirpath, info.show_hidden)
     call s:setinfo(a:winid, #{ dirpath: a:dirpath, names: names })
     call popup_settext(a:winid, names)
     call popup_setoptions(a:winid, #{ title: s:title(a:dirpath) })
@@ -187,8 +202,11 @@ func! s:filter(winid, key)
         return 1
     endif
 
+    " Toggle display hidden files
     if a:key is# 'h'
-        " TODO: 隠しファイルの表示をトグル
+        let info.show_hidden = !info.show_hidden
+        call s:update(a:winid, info.dirpath)
+        return 1
     endif
 
     if a:key is# 'r'
