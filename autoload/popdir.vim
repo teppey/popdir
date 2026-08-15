@@ -232,7 +232,8 @@ func! s:filter(winid, key)
 
     " c: create new file
     if a:key is# 'c'
-        call s:do_create_file(a:winid, a:key, info)
+        " call s:do_create_file(a:winid, a:key, info)
+        call s:input('New file: ', { winid, result -> execute('echo "foo"') })
         return 1
     endif
 
@@ -241,6 +242,32 @@ func! s:filter(winid, key)
     endif
 
     return popup_filter_menu(a:winid, a:key)
+endfunc
+
+func! s:input(prompt, callback)
+    let winid = popup_dialog(a:prompt, #{
+                \ callback: a:callback,
+                \ filter: function('s:input_filter'),
+                \ zindex: 300,
+                \ })
+    call setwinvar(winid, 'prompt', a:prompt)
+endfunc
+
+func! s:input_filter(winid, key)
+    let prompt = getwinvar(a:winid, 'prompt')
+    if a:key is# "\<Esc>"
+        call popup_close(a:winid)
+        return 1
+    elseif strtrans(a:key) == '<80><fd>`'
+        return 1
+    elseif a:key =~ '\f'
+        call win_execute(a:winid, 'let w:line = getline(".")')
+        let line = getwinvar(a:winid, 'line')
+        let line .= a:key
+        call popup_settext(a:winid, line)
+        return 1
+    endif
+    return 1
 endfunc
 
 func! s:do_create_file(winid, key, info)
