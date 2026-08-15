@@ -230,10 +230,10 @@ func! s:filter(winid, key)
         return 1
     endif
 
-    " c: create new file
+    " c: create file
     if a:key is# 'c'
         " call s:do_create_file(a:winid, a:key, info)
-        call s:input('New file: ', { winid, result -> execute('echo "foo"') })
+        call s:input('New file: ', { line -> execute($'throw "-{line}-"') })
         return 1
     endif
 
@@ -244,21 +244,34 @@ func! s:filter(winid, key)
     return popup_filter_menu(a:winid, a:key)
 endfunc
 
-func! s:input(prompt, callback)
+func! s:input(prompt, handler)
     let winid = popup_dialog(a:prompt, #{
-                \ callback: a:callback,
+                \ callback: function('s:input_callback', [a:handler]),
                 \ filter: function('s:input_filter'),
                 \ zindex: 300,
                 \ })
     call setwinvar(winid, 'prompt', a:prompt)
 endfunc
 
-func! s:input_filter(winid, key)
+func! s:input_callback(handler, winid, result)
     let prompt = getwinvar(a:winid, 'prompt')
-    if a:key is# "\<Esc>"
+    call win_execute(a:winid, 'let w:line = getline(".")')
+    let line = getwinvar(a:winid, 'line')
+    let line = line[len(prompt):]
+    call a:handler(line)
+endfunc
+
+func! s:input_filter(winid, key)
+    " TODO: backspace
+    let prompt = getwinvar(a:winid, 'prompt')
+    if strtrans(a:key) == '<80><fd>`'
+        return 1
+    elseif a:key is# "\<Esc>"
         call popup_close(a:winid)
         return 1
-    elseif strtrans(a:key) == '<80><fd>`'
+    elseif a:key is# "\<Enter>"
+        call win_execute(a:winid, 'let w:line = getline(".")')
+        call popup_close(a:winid)
         return 1
     elseif a:key =~ '\f'
         call win_execute(a:winid, 'let w:line = getline(".")')
