@@ -1,0 +1,6 @@
+- [ ] `/`: forward search
+- [ ] `?`: backward search
+- [.] `c`: create file
+- [ ] `d`: create directory
+- [ ] `n`: forward search next
+- [ ] `?`: backward search next

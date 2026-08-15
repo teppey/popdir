@@ -223,10 +223,16 @@ func! s:filter(winid, key)
         return 1
     endif
 
-    " Toggle display hidden files
+    " h: Toggle display hidden files
     if a:key is# 'h'
         let info.show_hidden = !info.show_hidden
         call s:update(a:winid, info.dirpath)
+        return 1
+    endif
+
+    " c: create new file
+    if a:key is# 'c'
+        call s:do_create_file(a:winid, a:key, info)
         return 1
     endif
 
@@ -236,3 +242,23 @@ func! s:filter(winid, key)
 
     return popup_filter_menu(a:winid, a:key)
 endfunc
+
+func! s:do_create_file(winid, key, info)
+    let winid2 = popup_dialog('filename: ', #{
+                \ callback: function('s:create_file_callback'),
+                \ filter: function('s:create_file_filter'),
+                \ zindex: 300,
+                \ })
+endfunc
+
+func! s:create_file_callback(winid, result)
+    if a:result == -1
+        return
+    endif
+    echo 'close dialog'
+endfunc
+
+func! s:create_file_filter(winid, key)
+    return popup_filter_menu(a:winid, a:key)
+endfunc
+
