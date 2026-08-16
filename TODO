@@ -5,3 +5,5 @@
 - [ ] `n`: forward search next
 - [ ] `?`: backward search next
 - [ ] `~`: go to home directory
+- [ ] すべての関数に abort を付ける
+- [ ] delete file

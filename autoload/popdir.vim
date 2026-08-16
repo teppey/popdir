@@ -230,10 +230,9 @@ func! s:filter(winid, key)
         return 1
     endif
 
-    " c: create file
+    " c: create a file
     if a:key is# 'c'
-        " call s:do_create_file(a:winid, a:key, info)
-        call s:input('New file: ', { line -> execute($'throw "-{line}-"') })
+        call s:input('New file: ', function('s:handle_create_file', [a:winid, info]))
         return 1
     endif
 
@@ -244,16 +243,34 @@ func! s:filter(winid, key)
     return popup_filter_menu(a:winid, a:key)
 endfunc
 
+func! s:handle_create_file(winid, info, name) abort
+    let name = trim(a:name)
+    if empty(name)
+        return
+    endif
+    let path = $'{a:info.dirpath}/{a:name}'
+    if !empty(glob(path))
+        throw $'faild to create file: "{path}" is already exists'
+    endif
+    call writefile([], path)
+    call s:update(a:winid, a:info.dirpath)
+endfunc
+
 func! s:input(prompt, handler)
     let winid = popup_dialog(a:prompt, #{
                 \ callback: function('s:input_callback', [a:handler]),
                 \ filter: function('s:input_filter'),
+                \ minwidth: 40,
                 \ zindex: 300,
                 \ })
     call setwinvar(winid, 'prompt', a:prompt)
 endfunc
 
 func! s:input_callback(handler, winid, result)
+    if a:result == -1
+        return
+    endif
+
     let prompt = getwinvar(a:winid, 'prompt')
     call win_execute(a:winid, 'let w:line = getline(".")')
     let line = getwinvar(a:winid, 'line')
@@ -282,23 +299,3 @@ func! s:input_filter(winid, key)
     endif
     return 1
 endfunc
-
-func! s:do_create_file(winid, key, info)
-    let winid2 = popup_dialog('filename: ', #{
-                \ callback: function('s:create_file_callback'),
-                \ filter: function('s:create_file_filter'),
-                \ zindex: 300,
-                \ })
-endfunc
-
-func! s:create_file_callback(winid, result)
-    if a:result == -1
-        return
-    endif
-    echo 'close dialog'
-endfunc
-
-func! s:create_file_filter(winid, key)
-    return popup_filter_menu(a:winid, a:key)
-endfunc
-
