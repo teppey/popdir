@@ -1,11 +1,13 @@
 - [ ] `/`: forward search
 - [ ] `?`: backward search
-- [.] `c`: create file
+- [x] `c`: create file
 - [ ] `d`: create directory
 - [ ] `n`: forward search next
 - [ ] `?`: backward search next
-- [ ] `~`: go to home directory
+- [x] `~`: go to home directory
 - [ ] すべての関数に abort を付ける
 - [ ] delete file
 - [ ] 文字列連結の `.` を `..` にする
 - [ ] 検索時のエスケープ
+- [ ] PopDir コマンドで引数を受け取る
+    - [ ] 引数でファイルパスの補完が可能か調べる

@@ -23,6 +23,7 @@ func! popdir#open(dirpath = '')
     let winid = popup_menu(names, #{
                 \ maxheight: 40,
                 \ minheight: 20,
+                \ minwidth: 26,
                 \ title: s:title(dirpath),
                 \ callback: function('s:callback'),
                 \ filter: function('s:filter'),
@@ -237,8 +238,15 @@ func! s:filter(winid, key)
         return 1
     endif
 
+    " ~: Go to home directory
+    if a:key is# '~'
+        call s:update(a:winid, expand('~'))
+        return 1
+    endif
+
     if a:key is# 'r'
         " TODO: リロード
+        return 1
     endif
 
     return popup_filter_menu(a:winid, a:key)
