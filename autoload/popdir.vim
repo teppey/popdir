@@ -112,19 +112,19 @@ func! s:trimslash(s)
     return trim(a:s, '/', 2)
 endfunc
 
-func! s:listdir(dir, show_hidden = 0)
-    let paths = []
-    for d in readdirex(a:dir)
+func! s:listdir(dirpath, hidden = 0)
+    let names = []
+    for d in readdirex(a:dirpath)
         let name = d.name
-        if !a:show_hidden && name[0] == '.'
+        if !a:hidden && name[0] == '.'
             continue
         endif
         if d.type ==# 'dir'
             let name .= '/'
         endif
-        call add(paths, name)
+        call add(names, name)
     endfor
-    return s:sort(paths)
+    return s:sort(names)
 endfunc
 
 func! s:update(winid, dirpath)
