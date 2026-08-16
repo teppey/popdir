@@ -4,3 +4,4 @@
 - [ ] `d`: create directory
 - [ ] `n`: forward search next
 - [ ] `?`: backward search next
+- [ ] `~`: go to home directory
