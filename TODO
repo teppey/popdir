@@ -7,3 +7,5 @@
 - [ ] `~`: go to home directory
 - [ ] すべての関数に abort を付ける
 - [ ] delete file
+- [ ] 文字列連結の `.` を `..` にする
+- [ ] 検索時のエスケープ

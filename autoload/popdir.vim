@@ -154,6 +154,7 @@ func! s:filter(winid, key)
         let prev_name = fnamemodify(info.dirpath, ':t')
         let parent = s:parent(info.dirpath)
         call s:update(a:winid, parent)
+        " TODO: escape
         call win_execute(a:winid, $"normal! /{prev_name}\<Enter>")
         return 1
     endif
@@ -232,7 +233,7 @@ func! s:filter(winid, key)
 
     " c: create a file
     if a:key is# 'c'
-        call s:input('New file: ', function('s:handle_create_file', [a:winid, info]))
+        call s:input('Create File', 'File Name: ', function('s:handle_create_file', [a:winid, info]))
         return 1
     endif
 
@@ -250,52 +251,67 @@ func! s:handle_create_file(winid, info, name) abort
     endif
     let path = $'{a:info.dirpath}/{a:name}'
     if !empty(glob(path))
-        throw $'faild to create file: "{path}" is already exists'
+        echoerr $'faild to create file: "{path}" is already exists'
+        return
     endif
     call writefile([], path)
     call s:update(a:winid, a:info.dirpath)
+    " TODO: escape
+    call win_execute(a:winid, $"normal! /{name}\<Enter>")
 endfunc
 
-func! s:input(prompt, handler)
-    let winid = popup_dialog(a:prompt, #{
+func! s:input(title, prompt, handler) abort
+    let in_winid = popup_dialog(a:prompt, #{
                 \ callback: function('s:input_callback', [a:handler]),
                 \ filter: function('s:input_filter'),
-                \ minwidth: 40,
+                \ title: $' {a:title} ',
+                \ minwidth: 50,
                 \ zindex: 300,
                 \ })
-    call setwinvar(winid, 'prompt', a:prompt)
+    call setwinvar(in_winid, 'prompt', a:prompt)
 endfunc
 
-func! s:input_callback(handler, winid, result)
+func! s:input_callback(handler, in_winid, result) abort
     if a:result == -1
         return
     endif
 
-    let prompt = getwinvar(a:winid, 'prompt')
-    call win_execute(a:winid, 'let w:line = getline(".")')
-    let line = getwinvar(a:winid, 'line')
-    let line = line[len(prompt):]
-    call a:handler(line)
+    let value = s:input_value(a:in_winid)
+    call a:handler(value)
 endfunc
 
-func! s:input_filter(winid, key)
-    " TODO: backspace
-    let prompt = getwinvar(a:winid, 'prompt')
+func! s:input_filter(in_winid, key) abort
+    let value = s:input_value(a:in_winid)
+
     if strtrans(a:key) == '<80><fd>`'
         return 1
     elseif a:key is# "\<Esc>"
-        call popup_close(a:winid)
+        call popup_close(a:in_winid, -1)
         return 1
     elseif a:key is# "\<Enter>"
-        call win_execute(a:winid, 'let w:line = getline(".")')
-        call popup_close(a:winid)
+        call popup_close(a:in_winid)
+        return 1
+    elseif a:key is# "\<BS>" || a:key is# "\<C-h>"
+        call s:set_input_value(a:in_winid, slice(value, 0, -1))
+        return 1
+    elseif a:key is# "\<C-u>"
+        call s:set_input_value(a:in_winid, '')
         return 1
     elseif a:key =~ '\f'
-        call win_execute(a:winid, 'let w:line = getline(".")')
-        let line = getwinvar(a:winid, 'line')
-        let line .= a:key
-        call popup_settext(a:winid, line)
+        call s:set_input_value(a:in_winid, value .. a:key)
         return 1
     endif
     return 1
+endfunc
+
+func! s:input_value(in_winid) abort
+    let prompt = getwinvar(a:in_winid, 'prompt')
+    call win_execute(a:in_winid, 'let w:line = getline(".")')
+    let line = getwinvar(a:in_winid, 'line')
+    return line[len(prompt):]
+endfunc
+
+func! s:set_input_value(in_winid, value) abort
+    let prompt = getwinvar(a:in_winid, 'prompt')
+    call popup_settext(a:in_winid, prompt .. a:value)
 endfunc
