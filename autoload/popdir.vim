@@ -22,8 +22,11 @@ func! popdir#open(dirpath = '')
     let names = s:listdir(dirpath, g:popdir_show_hidden)
     let winid = popup_menu(names, #{
                 \ maxheight: 40,
-                \ minheight: 20,
+                \ minheight: 30,
                 \ minwidth: 26,
+                \ pos: 'topleft',
+                \ line: 'cursor+1',
+                \ col: 'cursor+1',
                 \ title: s:title(dirpath),
                 \ callback: function('s:callback'),
                 \ filter: function('s:filter'),
@@ -244,6 +247,12 @@ func! s:filter(winid, key)
         return 1
     endif
 
+    if a:key is# '/'
+        let input_value = input('Search: ')
+        call setcmdline('')
+        return 1
+    endif
+
     if a:key is# 'r'
         " TODO: リロード
         return 1
@@ -275,6 +284,9 @@ func! s:input(title, prompt, handler) abort
                 \ title: $' {a:title} ',
                 \ minwidth: 50,
                 \ zindex: 300,
+                \ pos: 'topleft',
+                \ line: 'cursor+30',
+                \ col: 'cursor+1',
                 \ })
     call setwinvar(in_winid, 'prompt', a:prompt)
 endfunc
