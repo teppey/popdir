@@ -147,6 +147,7 @@ func! s:filter(winid, key)
         if info.isdir
             let subdir = $'{info.dirpath}/{info.name}'
             call s:update(a:winid, subdir)
+            call win_execute(a:winid, '1')
             return 1
         else
             return popup_filter_menu(a:winid, a:key)
