@@ -1,6 +1,7 @@
 - [ ] `/`: forward search
 - [ ] `?`: backward search
 - [x] `c`: create file
+- [x] `%`: create file (use input())
 - [ ] `d`: create directory
 - [ ] `n`: forward search next
 - [ ] `?`: backward search next
@@ -12,9 +13,10 @@
 - [ ] PopDir コマンドで引数を受け取る
     - [ ] 引数でファイルパスの補完が可能か調べる
 - [ ] パフォーマンス改善
-- [.] サブディレクトリ移動時に先頭行に移動
+- [x] サブディレクトリ移動時に先頭行に移動
 - [ ] 入力に input() を使用する
 - [ ] popdir#open() でオプション引数を受け取る
 - [ ] `gj`: 10j
 - [ ] `gk`: 10k
 - [ ] ignore list(__pycache__/など)
+- [ ] infoにwinidを入れる

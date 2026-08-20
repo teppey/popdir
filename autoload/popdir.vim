@@ -236,9 +236,16 @@ func! s:filter(winid, key)
         return 1
     endif
 
-    " c: create a file
+    " c: create file
     if a:key is# 'c'
         call s:input('Create File', 'File Name: ', function('s:handle_create_file', [a:winid, info]))
+        return 1
+    endif
+
+    " %: create file
+    if a:key is# '%'
+        let value = input('[popdir] Create file: ')
+        call s:handle_create_file(a:winid, info, value)
         return 1
     endif
 
