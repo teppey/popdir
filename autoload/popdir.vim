@@ -236,16 +236,25 @@ func! s:filter(winid, key)
         return 1
     endif
 
-    " c: create file
-    if a:key is# 'c'
-        call s:input('Create File', 'File Name: ', function('s:handle_create_file', [a:winid, info]))
+    " %: New file
+    if a:key is# '%'
+        let value = input('New file: ')
+        call s:handle_create_file(a:winid, info, value)
         return 1
     endif
 
-    " %: create file
-    if a:key is# '%'
-        let value = input('[popdir] Create file: ')
-        call s:handle_create_file(a:winid, info, value)
+    " D: Delete file
+    " TODO: directory
+    if a:key is# 'D'
+        let choice = confirm('Delete file?', "&Yes\n&No", 2)
+        if choice == 1
+            let path = $'{info.dirpath}/{info.name}'
+            let result = delete(path)
+            if result != 0
+                echoerr $'Failed to delete file: {path}'
+            endif
+            call s:update(a:winid, info.dirpath)
+        endif
         return 1
     endif
 

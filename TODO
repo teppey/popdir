@@ -1,7 +1,12 @@
 - [ ] `/`: forward search
 - [ ] `?`: backward search
 - [x] `c`: create file
-- [x] `%`: create file (use input())
+    - `%`に変更
+- [x] `%`: new file (use input())
+- [.] `D`: delete a file or a directory
+    - [x] delete a file
+    - [ ] delete a directory
+        - 再帰的なディレクトリの削除はサポートしない
 - [ ] `d`: create directory
 - [ ] `n`: forward search next
 - [ ] `?`: backward search next
@@ -13,6 +18,9 @@
 - [ ] PopDir コマンドで引数を受け取る
     - [ ] 引数でファイルパスの補完が可能か調べる
 - [ ] パフォーマンス改善
+    - 案1: Vim9 script
+    - 案2: win_execute() でキー操作をハンドリングするのではなくポップアップウィンドウのバッファで直接キーマップできないか
+    - 案3: ダブルバッファリング的な方法(ポップアップウィンドウに表示されているバッファと違う隠れたバッファで状態を変更してバッファを入れ替える)
 - [x] サブディレクトリ移動時に先頭行に移動
 - [ ] 入力に input() を使用する
 - [ ] popdir#open() でオプション引数を受け取る
@@ -20,3 +28,7 @@
 - [ ] `gk`: 10k
 - [ ] ignore list(__pycache__/など)
 - [ ] infoにwinidを入れる
+- [ ] シンボリックリンク対応
+- [ ] new fileでcompletion
+- [ ] s:filter()内の各ハンドリング処理を個別の関数にする
+    - 数が多くなってきたので
