@@ -32,3 +32,4 @@
 - [ ] new fileでcompletion
 - [ ] s:filter()内の各ハンドリング処理を個別の関数にする
     - 数が多くなってきたので
+- [ ] popup_create()の使用を検討する
