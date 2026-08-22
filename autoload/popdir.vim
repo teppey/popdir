@@ -264,9 +264,17 @@ func! s:filter(winid, key)
         return 1
     endif
 
+    " /: Forward search
     if a:key is# '/'
-        let input_value = input('Search: ')
-        call setcmdline('')
+        let value = input('/')
+        call win_execute(a:winid, $"normal! /{value}\<Enter>", 'silent!')
+        return 1
+    endif
+
+    " ?: Backword search
+    if a:key is# '?'
+        let value = input('?')
+        call win_execute(a:winid, $"normal! ?{value}\<Enter>", 'silent!')
         return 1
     endif
 

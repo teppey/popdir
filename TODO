@@ -1,18 +1,15 @@
-- [ ] `/`: forward search
-- [ ] `?`: backward search
-- [x] `c`: create file
-    - `%`に変更
+- [x] `/`: forward search
+- [ ] `n`: forward search next
+- [x] `?`: backward search
+- [ ] `N`: backward search next
 - [x] `%`: new file (use input())
 - [.] `D`: delete a file or a directory
     - [x] delete a file
     - [ ] delete a directory
         - 再帰的なディレクトリの削除はサポートしない
 - [ ] `d`: create directory
-- [ ] `n`: forward search next
-- [ ] `?`: backward search next
 - [x] `~`: go to home directory
 - [ ] すべての関数に abort を付ける
-- [ ] delete file
 - [ ] 文字列連結の `.` を `..` にする
 - [ ] 検索時のエスケープ
 - [ ] PopDir コマンドで引数を受け取る
@@ -22,7 +19,7 @@
     - 案2: win_execute() でキー操作をハンドリングするのではなくポップアップウィンドウのバッファで直接キーマップできないか
     - 案3: ダブルバッファリング的な方法(ポップアップウィンドウに表示されているバッファと違う隠れたバッファで状態を変更してバッファを入れ替える)
 - [x] サブディレクトリ移動時に先頭行に移動
-- [ ] 入力に input() を使用する
+- [x] 入力に input() を使用する
 - [ ] popdir#open() でオプション引数を受け取る
 - [ ] `gj`: 10j
 - [ ] `gk`: 10k
