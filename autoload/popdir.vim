@@ -8,7 +8,7 @@ set cpo&vim
 
 let g:popdir_show_hidden = 1
 
-func! popdir#open(dirpath = '')
+func! popdir#open(dirpath = '') abort
     let dirpath = a:dirpath
     if empty(dirpath)
         let curpath = expand('%:p')
@@ -39,7 +39,7 @@ func! popdir#open(dirpath = '')
                 \ })
 endfunc
 
-func! s:newinfo()
+func! s:newinfo() abort
     return #{
                 \ winid: 0,
                 \ dirpath: '',
@@ -62,7 +62,7 @@ func! s:setinfo(winid, data) abort
     call setwinvar(a:winid, 'info', info)
 endfunc
 
-func! s:getinfo(winid)
+func! s:getinfo(winid) abort
     let info = getwinvar(a:winid, 'info') ?? s:newinfo()
     call win_execute(a:winid, 'let w:name = getline(".")')
     let name = getwinvar(a:winid, 'name')
@@ -71,15 +71,15 @@ func! s:getinfo(winid)
     return info
 endfunc
 
-func! s:parent(path)
+func! s:parent(path) abort
     return fnamemodify(a:path, ':h')
 endfunc
 
-func! s:sort(names)
+func! s:sort(names) abort
     return sort(a:names, function('s:compare'))
 endfunc
 
-func! s:compare(a, b)
+func! s:compare(a, b) abort
     let a_is_dir = a:a[-1:] == '/'
     let b_is_dir = a:b[-1:] == '/'
 
@@ -100,7 +100,7 @@ func! s:compare(a, b)
         return 1
 endfunc
 
-func! s:callback(winid, result)
+func! s:callback(winid, result) abort
     if a:result == -1
         return
     endif
@@ -109,16 +109,16 @@ func! s:callback(winid, result)
     execute "silent edit " . path
 endfunc
 
-func! s:title(path)
+func! s:title(path) abort
     let path_tilde = fnamemodify(a:path, ':~')
     return $'  {path_tilde}  '
 endfunc
 
-func! s:trimslash(s)
+func! s:trimslash(s) abort
     return trim(a:s, '/', 2)
 endfunc
 
-func! s:listdir(dirpath, hidden = 0)
+func! s:listdir(dirpath, hidden = 0) abort
     let names = []
     for d in readdirex(a:dirpath)
         let name = d.name
@@ -133,7 +133,7 @@ func! s:listdir(dirpath, hidden = 0)
     return s:sort(names)
 endfunc
 
-func! s:update(winid, dirpath)
+func! s:update(winid, dirpath) abort
     let info = s:getinfo(a:winid)
     let names = s:listdir(a:dirpath, info.show_hidden)
     call s:setinfo(a:winid, #{ dirpath: a:dirpath, names: names })
@@ -141,7 +141,7 @@ func! s:update(winid, dirpath)
     call popup_setoptions(a:winid, #{ title: s:title(a:dirpath) })
 endfunc
 
-func! s:filter(winid, key)
+func! s:filter(winid, key) abort
     let info = s:getinfo(a:winid)
 
     " サブディレクトリを表示
@@ -302,63 +302,4 @@ func! s:handle_create_file(winid, info, name) abort
     call s:update(a:winid, a:info.dirpath)
     " TODO: escape
     call win_execute(a:winid, $"normal! /{name}\<Enter>")
-endfunc
-
-func! s:input(title, prompt, handler) abort
-    let in_winid = popup_dialog(a:prompt, #{
-                \ callback: function('s:input_callback', [a:handler]),
-                \ filter: function('s:input_filter'),
-                \ title: $' {a:title} ',
-                \ minwidth: 50,
-                \ zindex: 300,
-                \ pos: 'topleft',
-                \ line: 'cursor+30',
-                \ col: 'cursor+1',
-                \ })
-    call setwinvar(in_winid, 'prompt', a:prompt)
-endfunc
-
-func! s:input_callback(handler, in_winid, result) abort
-    if a:result == -1
-        return
-    endif
-
-    let value = s:input_value(a:in_winid)
-    call a:handler(value)
-endfunc
-
-func! s:input_filter(in_winid, key) abort
-    let value = s:input_value(a:in_winid)
-
-    if strtrans(a:key) == '<80><fd>`'
-        return 1
-    elseif a:key is# "\<Esc>"
-        call popup_close(a:in_winid, -1)
-        return 1
-    elseif a:key is# "\<Enter>"
-        call popup_close(a:in_winid)
-        return 1
-    elseif a:key is# "\<BS>" || a:key is# "\<C-h>"
-        call s:set_input_value(a:in_winid, slice(value, 0, -1))
-        return 1
-    elseif a:key is# "\<C-u>"
-        call s:set_input_value(a:in_winid, '')
-        return 1
-    elseif a:key =~ '\f'
-        call s:set_input_value(a:in_winid, value .. a:key)
-        return 1
-    endif
-    return 1
-endfunc
-
-func! s:input_value(in_winid) abort
-    let prompt = getwinvar(a:in_winid, 'prompt')
-    call win_execute(a:in_winid, 'let w:line = getline(".")')
-    let line = getwinvar(a:in_winid, 'line')
-    return line[len(prompt):]
-endfunc
-
-func! s:set_input_value(in_winid, value) abort
-    let prompt = getwinvar(a:in_winid, 'prompt')
-    call popup_settext(a:in_winid, prompt .. a:value)
 endfunc
