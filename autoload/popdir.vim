@@ -240,8 +240,7 @@ func! s:filter(winid, key) abort
 
     " %: New file
     if a:key is# '%'
-        let value = input('New file: ')
-        call s:handle_create_file(info.winid, info, value)
+        call s:do_create_file(info)
         return 1
     endif
 
@@ -288,18 +287,18 @@ func! s:filter(winid, key) abort
     return popup_filter_menu(info.winid, a:key)
 endfunc
 
-func! s:handle_create_file(winid, info, name) abort
-    let name = trim(a:name)
+func! s:do_create_file(info) abort
+    let name = trim(input('New file: '))
     if empty(name)
         return
     endif
-    let path = $'{a:info.dirpath}/{a:name}'
+    let path = $'{a:info.dirpath}/{name}'
     if !empty(glob(path))
         echoerr $'faild to create file: "{path}" is already exists'
         return
     endif
     call writefile([], path)
-    call s:update(a:winid, a:info.dirpath)
+    call s:update(a:info.winid, a:info.dirpath)
     " TODO: escape
-    call win_execute(a:winid, $"normal! /{name}\<Enter>")
+    call win_execute(a:info.winid, $"normal! /{name}\<Enter>")
 endfunc
