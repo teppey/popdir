@@ -32,6 +32,7 @@ func! popdir#open(dirpath = '')
                 \ filter: function('s:filter'),
                 \ })
     call s:setinfo(winid, #{
+                \ winid: winid,
                 \ dirpath: dirpath,
                 \ names: names,
                 \ show_hidden: g:popdir_show_hidden,
@@ -40,6 +41,7 @@ endfunc
 
 func! s:newinfo()
     return #{
+                \ winid: 0,
                 \ dirpath: '',
                 \ names: [],
                 \ name: '',
@@ -146,11 +148,11 @@ func! s:filter(winid, key)
     if a:key is# "\<Enter>"
         if info.isdir
             let subdir = $'{info.dirpath}/{info.name}'
-            call s:update(a:winid, subdir)
-            call win_execute(a:winid, '1')
+            call s:update(info.winid, subdir)
+            call win_execute(info.winid, '1')
             return 1
         else
-            return popup_filter_menu(a:winid, a:key)
+            return popup_filter_menu(info.winid, a:key)
         endif
     endif
 
@@ -158,28 +160,28 @@ func! s:filter(winid, key)
     if a:key is# '-'
         let prev_name = fnamemodify(info.dirpath, ':t')
         let parent = s:parent(info.dirpath)
-        call s:update(a:winid, parent)
+        call s:update(info.winid, parent)
         " TODO: escape
-        call win_execute(a:winid, $"normal! /{prev_name}\<Enter>")
+        call win_execute(info.winid, $"normal! /{prev_name}\<Enter>")
         return 1
     endif
 
     " <Home>: Move to first line
     if a:key is# "\<Home>"
-        call win_execute(a:winid, '1')
+        call win_execute(info.winid, '1')
         return 1
     endif
 
     " gg: Move to first line
     if a:key is# 'g' && info.char_stack[:-1] == ['g']
         let info.char_stack = []
-        call win_execute(a:winid, '1')
+        call win_execute(info.winid, '1')
         return 1
     endif
 
     " <End>: Move to last line
     if a:key is# "\<End>"
-        call win_execute(a:winid, 'normal! G')
+        call win_execute(info.winid, 'normal! G')
         return 1
     endif
 
@@ -187,9 +189,9 @@ func! s:filter(winid, key)
     if a:key is# 'G'
         let num_arg = str2nr(join(info.char_stack, ''))
         if num_arg > 0
-            call win_execute(a:winid, $'normal! {num_arg}G')
+            call win_execute(info.winid, $'normal! {num_arg}G')
         else
-            call win_execute(a:winid, 'normal! G')
+            call win_execute(info.winid, 'normal! G')
         endif
         let info.char_stack = []
         return 1
@@ -208,7 +210,7 @@ func! s:filter(winid, key)
         if num_arg < 1
             let num_arg = 1
         endif
-        call win_execute(a:winid, $'normal! {num_arg}{a:key}')
+        call win_execute(info.winid, $'normal! {num_arg}{a:key}')
         let info.char_stack = []
         return 1
     endif
@@ -225,21 +227,21 @@ func! s:filter(winid, key)
     let command_scroll_cursor = ['z', 't', 'b']
     if index(command_scroll_cursor, a:key) >= 0 && get(info.char_stack, -1, '') ==# 'z'
         let info.char_stack = []
-        call win_execute(a:winid, 'normal! z' . a:key)
+        call win_execute(info.winid, 'normal! z' . a:key)
         return 1
     endif
 
     " h: Toggle display hidden files
     if a:key is# 'h'
         let info.show_hidden = !info.show_hidden
-        call s:update(a:winid, info.dirpath)
+        call s:update(info.winid, info.dirpath)
         return 1
     endif
 
     " %: New file
     if a:key is# '%'
         let value = input('New file: ')
-        call s:handle_create_file(a:winid, info, value)
+        call s:handle_create_file(info.winid, info, value)
         return 1
     endif
 
@@ -253,28 +255,28 @@ func! s:filter(winid, key)
             if result != 0
                 echoerr $'Failed to delete file: {path}'
             endif
-            call s:update(a:winid, info.dirpath)
+            call s:update(info.winid, info.dirpath)
         endif
         return 1
     endif
 
     " ~: Go to home directory
     if a:key is# '~'
-        call s:update(a:winid, expand('~'))
+        call s:update(info.winid, expand('~'))
         return 1
     endif
 
     " /: Forward search
     if a:key is# '/'
         let value = input('/')
-        call win_execute(a:winid, $"normal! /{value}\<Enter>", 'silent!')
+        call win_execute(info.winid, $"normal! /{value}\<Enter>", 'silent!')
         return 1
     endif
 
     " ?: Backword search
     if a:key is# '?'
         let value = input('?')
-        call win_execute(a:winid, $"normal! ?{value}\<Enter>", 'silent!')
+        call win_execute(info.winid, $"normal! ?{value}\<Enter>", 'silent!')
         return 1
     endif
 
@@ -283,7 +285,7 @@ func! s:filter(winid, key)
         return 1
     endif
 
-    return popup_filter_menu(a:winid, a:key)
+    return popup_filter_menu(info.winid, a:key)
 endfunc
 
 func! s:handle_create_file(winid, info, name) abort
