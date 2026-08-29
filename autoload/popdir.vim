@@ -45,6 +45,7 @@ func! s:newinfo() abort
                 \ dirpath: '',
                 \ names: [],
                 \ name: '',
+                \ path: '',
                 \ isdir: 0,
                 \ char_stack: [],
                 \ show_hidden: 0,
@@ -68,6 +69,7 @@ func! s:getinfo(winid) abort
     let name = getwinvar(a:winid, 'name')
     let info.name = s:trimslash(name)
     let info.isdir = name[-1:] == '/'
+    let info.path = $'{info.dirpath}/{info.name}'
     return info
 endfunc
 
@@ -145,15 +147,9 @@ func! s:filter(winid, key) abort
     let info = s:getinfo(a:winid)
 
     " サブディレクトリを表示
-    if a:key is# "\<Enter>"
-        if info.isdir
-            let subdir = $'{info.dirpath}/{info.name}'
-            call s:update(info.winid, subdir)
-            call win_execute(info.winid, '1')
-            return 1
-        else
-            return popup_filter_menu(info.winid, a:key)
-        endif
+    if a:key is# "\<Enter>" && info.isdir
+        call s:doSubdir(info)
+        return 1
     endif
 
     " 一つ上のディレクトリに移動
@@ -240,7 +236,7 @@ func! s:filter(winid, key) abort
 
     " %: Create new file and edit
     if a:key is# '%'
-        call s:do_new_file(info)
+        call s:doNewFile(info)
         return 1
     endif
 
@@ -287,7 +283,12 @@ func! s:filter(winid, key) abort
     return popup_filter_menu(info.winid, a:key)
 endfunc
 
-func! s:do_new_file(info) abort
+func! s:doSubdir(info) abort
+    call s:update(a:info.winid, a:info.path)
+    call win_execute(a:info.winid, '1')
+endfunc
+
+func! s:doNewFile(info) abort
     let name = trim(input('New file: '))
     if empty(name)
         return
