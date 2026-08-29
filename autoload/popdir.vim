@@ -238,16 +238,16 @@ func! s:filter(winid, key) abort
         return 1
     endif
 
-    " %: New file
+    " %: Create new file and edit
     if a:key is# '%'
-        call s:do_create_file(info)
+        call s:do_new_file(info)
         return 1
     endif
 
     " D: Delete file
     " TODO: directory
     if a:key is# 'D'
-        let choice = confirm('Delete file?', "&Yes\n&No", 2)
+        let choice = confirm($'Delete file?: {info.name}', "&Yes\n&No", 2)
         if choice == 1
             let path = $'{info.dirpath}/{info.name}'
             let result = delete(path)
@@ -287,7 +287,7 @@ func! s:filter(winid, key) abort
     return popup_filter_menu(info.winid, a:key)
 endfunc
 
-func! s:do_create_file(info) abort
+func! s:do_new_file(info) abort
     let name = trim(input('New file: '))
     if empty(name)
         return
@@ -297,8 +297,6 @@ func! s:do_create_file(info) abort
         echoerr $'faild to create file: "{path}" is already exists'
         return
     endif
-    call writefile([], path)
-    call s:update(a:info.winid, a:info.dirpath)
-    " TODO: escape
-    call win_execute(a:info.winid, $"normal! /{name}\<Enter>")
+    call popup_close(a:info.winid, -1)
+    execute "silent edit " . path
 endfunc
