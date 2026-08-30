@@ -20,7 +20,6 @@ func! popdir#open(dirpath = '') abort
     endif
 
     let names = s:listdir(dirpath, g:popdir_show_hidden)
-    " let names = s:listdir2(dirpath, g:popdir_show_hidden)
     let winid = popup_menu(names, #{
                 \ maxheight: 40,
                 \ minheight: 30,
@@ -121,27 +120,13 @@ func! s:trimslash(s) abort
     return trim(a:s, '/', 2)
 endfunc
 
+" TODO: symlink
+func! s:suffix(dirpath, name) abort
+    return (isdirectory($'{a:dirpath}/{a:name}')) ? '/' : ''
+endfunc
+
 func! s:listdir(dirpath, hidden = 0) abort
-    let names = []
-    for d in readdirex(a:dirpath)
-        let name = d.name
-        if !a:hidden && name[0] == '.'
-            continue
-        endif
-        if d.type ==# 'dir'
-            let name .= '/'
-        endif
-        call add(names, name)
-    endfor
-    return s:sort(names)
-endfunc
-
-func! s:formatname(dirent)
-    return a:dirent.name .. ((a:dirent.type ==# 'dir') ? '/' : '')
-endfunc
-
-func! s:listdir2(dirpath, hidden = 0) abort
-    let names = map(readdirex(a:dirpath), {_, name -> s:formatname(name)})
+    let names = map(readdir(a:dirpath), {_, name -> name .. s:suffix(a:dirpath, name)})
     return s:sort(filter(names, {_, name -> a:hidden || name[0] != '.'}))
 endfunc
 
