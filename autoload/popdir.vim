@@ -39,54 +39,54 @@ func! popdir#open(dirpath = '') abort
                 \ })
 endfunc
 
-func! s:newinfo() abort
-    return #{
-                \ winid: 0,
-                \ dirpath: '',
-                \ names: [],
-                \ name: '',
-                \ path: '',
-                \ isdir: 0,
-                \ char_stack: [],
-                \ show_hidden: 0,
-                \ }
-endfunc
+def! s:newinfo(): dict<any>
+    return {
+        winid: 0,
+        dirpath: '',
+        names: [],
+        name: '',
+        path: '',
+        isdir: 0,
+        char_stack: [],
+        show_hidden: 0,
+    }
+enddef
 
-func! s:setinfo(winid, data) abort
-    let info = getwinvar(a:winid, 'info') ?? s:newinfo()
-    for [key, value] in items(a:data)
+def! s:setinfo(winid: number, data: dict<any>): void
+    final info = getwinvar(winid, 'info') ?? s:newinfo()
+    for [key, value] in items(data)
         if !has_key(info, key)
             throw $'unexpected info key: {key}'
         endif
-        let info[key] = value
+        info[key] = value
     endfor
-    call setwinvar(a:winid, 'info', info)
-endfunc
+    setwinvar(winid, 'info', info)
+enddef
 
-func! s:getinfo(winid) abort
-    let info = getwinvar(a:winid, 'info') ?? s:newinfo()
-    call win_execute(a:winid, 'let w:name = getline(".")')
-    let name = getwinvar(a:winid, 'name')
-    let info.name = s:trimslash(name)
-    let info.isdir = name[-1:] == '/'
-    let info.path = $'{info.dirpath}/{info.name}'
+def! s:getinfo(winid: number): dict<any>
+    final info = getwinvar(winid, 'info') ?? s:newinfo()
+    win_execute(winid, 'w:name = getline(".")')
+    const name = getwinvar(winid, 'name')
+    info.name = s:trimslash(name)
+    info.isdir = name[-1 :] == '/'
+    info.path = $'{info.dirpath}/{info.name}'
     return info
-endfunc
+enddef
 
-func! s:parent(path) abort
-    return fnamemodify(a:path, ':h')
-endfunc
+def! s:parent(path: string): string
+    return fnamemodify(path, ':h')
+enddef
 
-func! s:sort(names) abort
-    return sort(a:names, function('s:compare'))
-endfunc
+def! s:sort(names: list<string>): list<string>
+    return sort(names, s:compare)
+enddef
 
-func! s:compare(a, b) abort
-    let a_is_dir = a:a[-1:] == '/'
-    let b_is_dir = a:b[-1:] == '/'
+def! s:compare(a: string, b: string): number
+    const a_is_dir = a[-1 :] == '/'
+    const b_is_dir = b[-1 :] == '/'
 
-    let a = s:trimslash(a:a)
-    let b = s:trimslash(a:b)
+    const a_trimmed = s:trimslash(a)
+    const b_trimmed = s:trimslash(b)
 
     if a_is_dir && !b_is_dir
         return -1
@@ -94,13 +94,14 @@ func! s:compare(a, b) abort
         return 1
     endif
 
-    if a:a == a:b
+    if a_trimmed == b_trimmed
         return 0
-    elseif a:a < a:b
+    elseif a_trimmed < b_trimmed
         return -1
     else
         return 1
-endfunc
+    endif
+enddef
 
 func! s:callback(winid, result) abort
     if a:result == -1
@@ -143,7 +144,7 @@ func! s:filter(winid, key) abort
 
     " サブディレクトリを表示
     if a:key is# "\<Enter>" && info.isdir
-        call s:doSubdir(info)
+        call DoSubDir(info)
         return 1
     endif
 
@@ -231,7 +232,7 @@ func! s:filter(winid, key) abort
 
     " %: Create new file and edit
     if a:key is# '%'
-        call s:doNewFile(info)
+        call DoNewFile(info)
         return 1
     endif
 
@@ -278,21 +279,21 @@ func! s:filter(winid, key) abort
     return popup_filter_menu(info.winid, a:key)
 endfunc
 
-func! s:doSubdir(info) abort
-    call s:update(a:info.winid, a:info.path)
-    call win_execute(a:info.winid, '1')
-endfunc
+def! DoSubDir(info: dict<any>): void
+    s:update(info.winid, info.path)
+    win_execute(info.winid, 'cursor(1, 1)')
+enddef
 
-func! s:doNewFile(info) abort
-    let name = trim(input('New file: '))
+def! DoNewFile(info: dict<any>): void
+    const name = trim(input('New file: '))
     if empty(name)
         return
     endif
-    let path = $'{a:info.dirpath}/{name}'
+    const path = $'{info.dirpath}/{name}'
     if !empty(glob(path))
-        echoerr $'faild to create file: "{path}" is already exists'
+        :echoerr $'faild to create file: "{path}" is already exists'
         return
     endif
-    call popup_close(a:info.winid, -1)
-    execute "silent edit " . path
-endfunc
+    popup_close(info.winid, -1)
+    :execute 'silent edit ' .. path
+enddef

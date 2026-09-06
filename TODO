@@ -1,6 +1,9 @@
 - [.] s:filter()内の各ハンドリング処理を個別の関数にする
     - 数が多くなってきたので
 
+- [ ] `c`: change directory
+- [ ] `p`: back directory
+    - [ ] ディレクトリスタックを実装する必要があるかも(`s`?)
 - [x] `/`: forward search
 - [ ] `n`: forward search next
 - [x] `?`: backward search
@@ -36,10 +39,11 @@
 - [ ] シンボリックリンク対応
 - [ ] new fileでcompletion
 - [ ] popup_create()の使用を検討する
-- [ ] `c`: change directory
-- [ ] ディレクトリスタックを検討(`s`?)
 - [ ] `g:popdir_options`辞書の検討
 - [ ] info.pathをメソッドにする
 - [ ] ファイル・ディレクトリのリネーム
 - [ ] ドットで始まらない名前も隠せるようにする(隠す名前のパターンをリストで持つ?: ['^\.', ...])
 - [ ] テスト
+- [ ] 読み取り専用でファイルを開く
+- [ ] `<space>`: <enter>と同じにする
+- [ ] ソート順: ディレクトリ/ファイルの次に大文字/小文字でならべる(netrwにあわせる)
