@@ -65,7 +65,7 @@ enddef
 
 def! s:getinfo(winid: number): dict<any>
     final info = getwinvar(winid, 'info') ?? s:newinfo()
-    win_execute(winid, 'w:name = getline(".")')
+    win_execute(winid, 'vim9cmd w:name = getline(".")')
     const name = getwinvar(winid, 'name')
     info.name = s:trimslash(name)
     info.isdir = name[-1 :] == '/'
@@ -103,14 +103,13 @@ def! s:compare(a: string, b: string): number
     endif
 enddef
 
-func! s:callback(winid, result) abort
-    if a:result == -1
+def! s:callback(winid: number, result: number): void
+    if result == -1
         return
     endif
-    let info = s:getinfo(a:winid)
-    let path = $'{info.dirpath}/{info.name}'
-    execute "silent edit " . path
-endfunc
+    const info = s:getinfo(winid)
+    execute "silent edit " .. info.path
+enddef
 
 func! s:title(path) abort
     let path_tilde = fnamemodify(a:path, ':~')
