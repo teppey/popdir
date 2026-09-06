@@ -111,19 +111,19 @@ def! s:callback(winid: number, result: number): void
     execute "silent edit " .. info.path
 enddef
 
-func! s:title(path) abort
-    let path_tilde = fnamemodify(a:path, ':~')
+def! s:title(path: string): string
+    const path_tilde = fnamemodify(path, ':~')
     return $'  {path_tilde}  '
-endfunc
+enddef
 
-func! s:trimslash(s) abort
-    return trim(a:s, '/', 2)
-endfunc
+def! s:trimslash(s: string): string
+    return trim(s, '/', 2)
+enddef
 
 " TODO: symlink
-func! s:suffix(dirpath, name) abort
-    return (isdirectory($'{a:dirpath}/{a:name}')) ? '/' : ''
-endfunc
+def! s:suffix(dirpath: string, name: string): string
+    return (isdirectory($'{dirpath}/{name}')) ? '/' : ''
+enddef
 
 func! s:listdir(dirpath, hidden = 0) abort
     let names = map(readdir(a:dirpath), {_, name -> name .. s:suffix(a:dirpath, name)})
