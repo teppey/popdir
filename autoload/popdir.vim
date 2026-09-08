@@ -125,10 +125,10 @@ def! s:suffix(dirpath: string, name: string): string
     return (isdirectory($'{dirpath}/{name}')) ? '/' : ''
 enddef
 
-func! s:listdir(dirpath, hidden = 0) abort
-    let names = map(readdir(a:dirpath), {_, name -> name .. s:suffix(a:dirpath, name)})
-    return s:sort(filter(names, {_, name -> a:hidden || name[0] != '.'}))
-endfunc
+def! s:listdir(dirpath: string, hidden: bool = false): list<string>
+    final names = map(readdir(dirpath), (_, name) => name .. s:suffix(dirpath, name))
+    return s:sort(filter(names, (_, name) => hidden || name[0] != '.'))
+enddef
 
 func! s:update(winid, dirpath) abort
     let info = s:getinfo(a:winid)
