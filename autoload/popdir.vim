@@ -130,13 +130,13 @@ def! s:listdir(dirpath: string, hidden: bool = false): list<string>
     return s:sort(filter(names, (_, name) => hidden || name[0] != '.'))
 enddef
 
-func! s:update(winid, dirpath) abort
-    let info = s:getinfo(a:winid)
-    let names = s:listdir(a:dirpath, info.show_hidden)
-    call s:setinfo(a:winid, #{ dirpath: a:dirpath, names: names })
-    call popup_settext(a:winid, names)
-    call popup_setoptions(a:winid, #{ title: s:title(a:dirpath) })
-endfunc
+def! s:update(winid: number, dirpath: string): void
+    const info = s:getinfo(winid)
+    const names = s:listdir(dirpath, info.show_hidden)
+    s:setinfo(winid, { dirpath: dirpath, names: names })
+    popup_settext(winid, names)
+    popup_setoptions(winid, { title: s:title(dirpath) })
+enddef
 
 func! s:filter(winid, key) abort
     let info = s:getinfo(a:winid)
