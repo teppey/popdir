@@ -3,41 +3,38 @@
 " Author: Teppei Hamada <temada@gmail.com>
 " Version: 0.1
 
-let s:cpo_save = &cpo
-set cpo&vim
-
 let g:popdir_show_hidden = 1
 
-func! popdir#open(dirpath = '') abort
-    let dirpath = a:dirpath
+def! popdir#open(path: string = ''): void
+    var dirpath = path
     if empty(dirpath)
-        let curpath = expand('%:p')
+        const curpath = expand('%:p')
         if empty(curpath)
-            let dirpath = getcwd()
+            dirpath = getcwd()
         else
-            let dirpath = s:parent(curpath)
+            dirpath = s:Parent(curpath)
         endif
     endif
 
-    let names = s:listdir(dirpath, g:popdir_show_hidden)
-    let winid = popup_menu(names, #{
-                \ maxheight: 40,
-                \ minheight: 30,
-                \ minwidth: 26,
-                \ pos: 'topleft',
-                \ line: 'cursor+1',
-                \ col: 'cursor+1',
-                \ title: s:title(dirpath),
-                \ callback: function('s:callback'),
-                \ filter: function('s:filter'),
-                \ })
-    call s:setinfo(winid, #{
-                \ winid: winid,
-                \ dirpath: dirpath,
-                \ names: names,
-                \ show_hidden: g:popdir_show_hidden,
-                \ })
-endfunc
+    const names = s:listdir(dirpath, g:popdir_show_hidden)
+    const winid = popup_menu(names, {
+        maxheight: 40,
+        minheight: 30,
+        minwidth: 26,
+        pos: 'topleft',
+        line: 'cursor+1',
+        col: 'cursor+1',
+        title: s:title(dirpath),
+        callback: s:callback,
+        filter: s:filter,
+    })
+    s:setinfo(winid, {
+        winid: winid,
+        dirpath: dirpath,
+        names: names,
+        show_hidden: g:popdir_show_hidden,
+    })
+enddef
 
 def! s:newinfo(): dict<any>
     return {
@@ -73,7 +70,7 @@ def! s:getinfo(winid: number): dict<any>
     return info
 enddef
 
-def! s:parent(path: string): string
+def! s:Parent(path: string): string
     return fnamemodify(path, ':h')
 enddef
 
@@ -138,152 +135,152 @@ def! s:update(winid: number, dirpath: string): void
     popup_setoptions(winid, { title: s:title(dirpath) })
 enddef
 
-func! s:filter(winid, key) abort
-    let info = s:getinfo(a:winid)
+def! s:filter(winid: number, key: string): bool
+    const info = s:getinfo(winid)
 
-    " サブディレクトリを表示
-    if a:key is# "\<Enter>" && info.isdir
-        call DoSubDir(info)
-        return 1
+    # サブディレクトリを表示
+    if key == "\<Enter>" && info.isdir
+        s:DoSubDir(info)
+        return true
     endif
 
-    " 一つ上のディレクトリに移動
-    if a:key is# '-'
-        let prev_name = fnamemodify(info.dirpath, ':t')
-        let parent = s:parent(info.dirpath)
-        call s:update(info.winid, parent)
-        " TODO: escape
-        call win_execute(info.winid, $"normal! /{prev_name}\<Enter>")
-        return 1
+    # 一つ上のディレクトリに移動
+    if key == '-'
+        const prev_name = fnamemodify(info.dirpath, ':t')
+        const parent = s:Parent(info.dirpath)
+        s:update(info.winid, parent)
+        # TODO: escape
+        win_execute(info.winid, $":normal! /{prev_name}\<Enter>")
+        return true
     endif
 
-    " <Home>: Move to first line
-    if a:key is# "\<Home>"
-        call win_execute(info.winid, '1')
-        return 1
+    # <Home>: Move to first line
+    if key == "\<Home>"
+        win_execute(info.winid, ':1')
+        return true
     endif
 
-    " gg: Move to first line
-    if a:key is# 'g' && info.char_stack[:-1] == ['g']
-        let info.char_stack = []
-        call win_execute(info.winid, '1')
-        return 1
+    # gg: Move to first line
+    if key == 'g' && info.char_stack[: -1] == ['g']
+        info.char_stack = []
+        win_execute(info.winid, ':1')
+        return true
     endif
 
-    " <End>: Move to last line
-    if a:key is# "\<End>"
-        call win_execute(info.winid, 'normal! G')
-        return 1
+    # <End>: Move to last line
+    if key == "\<End>"
+        win_execute(info.winid, ':normal! G')
+        return true
     endif
 
-    " G: Goto line <count>, default last line
-    if a:key is# 'G'
-        let num_arg = str2nr(join(info.char_stack, ''))
+    # G: Goto line <count>, default last line
+    if key == 'G'
+        const num_arg = str2nr(join(info.char_stack, ''))
         if num_arg > 0
-            call win_execute(info.winid, $'normal! {num_arg}G')
+            win_execute(info.winid, $':normal! {num_arg}G')
         else
-            call win_execute(info.winid, 'normal! G')
+            win_execute(info.winid, ':normal! G')
         endif
-        let info.char_stack = []
-        return 1
+        info.char_stack = []
+        return true
     endif
 
-    " j: <count> lines downward
-    " k: <count lines upward
-    " H: Line <count> from top of window
-    " M: Middle line of window
-    " L: Line <count> from bottom of window
-    " <C-F>: Page down
-    " <C-B>: Page up
-    let command_as_is = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
-    if index(command_as_is, a:key) >= 0
-        let num_arg = str2nr(join(info.char_stack, ''))
+    # j: <count> lines downward
+    # k: <count lines upward
+    # H: Line <count> from top of window
+    # M: Middle line of window
+    # L: Line <count> from bottom of window
+    # <C-F>: Page down
+    # <C-B>: Page up
+    const command_as_is = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
+    if index(command_as_is, key) >= 0
+        var num_arg = str2nr(join(info.char_stack, ''))
         if num_arg < 1
-            let num_arg = 1
+            num_arg = 1
         endif
-        call win_execute(info.winid, $'normal! {num_arg}{a:key}')
-        let info.char_stack = []
-        return 1
+        win_execute(info.winid, $':normal! {num_arg}{key}')
+        info.char_stack = []
+        return true
     endif
 
-    " For `gg` and <count> arg
-    if a:key =~ '[gz0-9]'
-        call add(info.char_stack, a:key)
-        return 1
+    # For `gg` and <count> arg
+    if key =~ '[gz0-9]'
+        add(info.char_stack, key)
+        return true
     endif
 
-    " zz: Cursor line to center of window
-    " zt: Cursor line to top of window
-    " zb: Cursor line to bottom of window
-    let command_scroll_cursor = ['z', 't', 'b']
-    if index(command_scroll_cursor, a:key) >= 0 && get(info.char_stack, -1, '') ==# 'z'
-        let info.char_stack = []
-        call win_execute(info.winid, 'normal! z' . a:key)
-        return 1
+    # zz: Cursor line to center of window
+    # zt: Cursor line to top of window
+    # zb: Cursor line to bottom of window
+    const command_scroll_cursor = ['z', 't', 'b']
+    if index(command_scroll_cursor, key) >= 0 && get(info.char_stack, -1, '') ==# 'z'
+        info.char_stack = []
+        win_execute(info.winid, $':normal! z{key}')
+        return true
     endif
 
-    " h: Toggle display hidden files
-    if a:key is# 'h'
-        let info.show_hidden = !info.show_hidden
-        call s:update(info.winid, info.dirpath)
-        return 1
+    # h: Toggle display hidden files
+    if key == 'h'
+        info.show_hidden = !info.show_hidden
+        s:update(info.winid, info.dirpath)
+        return true
     endif
 
-    " %: Create new file and edit
-    if a:key is# '%'
-        call DoNewFile(info)
-        return 1
+    # %: Create new file and edit
+    if key == '%'
+        s:DoNewFile(info)
+        return true
     endif
 
-    " D: Delete file
-    " TODO: directory
-    if a:key is# 'D'
-        let choice = confirm($'Delete file?: {info.name}', "&Yes\n&No", 2)
+    # D: Delete file
+    # TODO: directory
+    if key == 'D'
+        const choice = confirm($'Delete file?: {info.name}', "&Yes\n&No", 2)
         if choice == 1
-            let path = $'{info.dirpath}/{info.name}'
-            let result = delete(path)
+            const path = $'{info.dirpath}/{info.name}'
+            const result = delete(path)
             if result != 0
                 echoerr $'Failed to delete file: {path}'
             endif
-            call s:update(info.winid, info.dirpath)
+            s:update(info.winid, info.dirpath)
         endif
-        return 1
+        return true
     endif
 
-    " ~: Go to home directory
-    if a:key is# '~'
-        call s:update(info.winid, expand('~'))
-        return 1
+    # ~: Go to home directory
+    if key == '~'
+        s:update(info.winid, expand('~'))
+        return true
     endif
 
-    " /: Forward search
-    if a:key is# '/'
-        let value = input('/')
-        call win_execute(info.winid, $"normal! /{value}\<Enter>", 'silent!')
-        return 1
+    # /: Forward search
+    if key == '/'
+        const value = input('/')
+        win_execute(info.winid, $":normal! /{value}\<Enter>", 'silent!')
+        return true
     endif
 
-    " ?: Backword search
-    if a:key is# '?'
-        let value = input('?')
-        call win_execute(info.winid, $"normal! ?{value}\<Enter>", 'silent!')
-        return 1
+    # ?: Backword search
+    if key == '?'
+        const value = input('?')
+        win_execute(info.winid, $":normal! ?{value}\<Enter>", 'silent!')
+        return true
     endif
 
-    if a:key is# 'r'
-        " TODO: リロード
-        return 1
+    if key == 'r'
+        # TODO: リロード
+        return true
     endif
 
-    return popup_filter_menu(info.winid, a:key)
-endfunc
-
-def! DoSubDir(info: dict<any>): void
-    s:update(info.winid, info.path)
-    win_execute(info.winid, 'cursor(1, 1)')
+    return popup_filter_menu(info.winid, key)
 enddef
 
-def! DoNewFile(info: dict<any>): void
+def! s:DoSubDir(info: dict<any>): void
+    s:update(info.winid, info.path)
+    win_execute(info.winid, 'vim9cmd cursor(1, 1)')
+enddef
+
+def! s:DoNewFile(info: dict<any>): void
     const name = trim(input('New file: '))
     if empty(name)
         return
