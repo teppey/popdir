@@ -1,41 +1,27 @@
+未対応
+------
+
 - [.] s:filter()内の各ハンドリング処理を個別の関数にする
     - 数が多くなってきたので
-
 - [ ] `c`: change directory
 - [ ] `p`: back directory
     - [ ] ディレクトリスタックを実装する必要があるかも(`s`?)
-- [x] `/`: forward search
 - [ ] `n`: forward search next
-- [x] `?`: backward search
 - [ ] `N`: backward search next
-- [x] `%`: new file (use input())
-    - [x] ファイルを作成したらedit
 - [x] `D`: delete a file or a directory
     - [x] delete a file
         - Yes/Noプロンプトに削除対象のファイルを表示する
 - [ ] delete a directory
     - 再帰的なディレクトリの削除はサポートしない
 - [ ] `d`: create directory
-- [x] `~`: go to home directory
-- [x] すべての関数に abort を付ける
 - [ ] 文字列連結の `.` を `..` にする
 - [ ] 検索時のエスケープ
-- [ ] PopDir コマンドで引数を受け取る
-    - [ ] 引数でファイルパスの補完が可能か調べる
-- [.] パフォーマンス改善
-    - 案1: Vim9 script
-    - 案2: win_execute() でキー操作をハンドリングするのではなくポップアップウィンドウのバッファで直接キーマップできないか
-    - 案3: ダブルバッファリング的な方法(ポップアップウィンドウに表示されているバッファと違う隠れたバッファで状態を変更してバッファを入れ替える)
-    - forは遅いのでなるべくmap()を使う(def関数ならforでも早いかも)
-    - 検索にsearch()を追加(normalコマンド+`/`より早い)
-    - readdirex()が遅い場合があるようなのでreaddir()＋isdirectory()を使う
-- [x] サブディレクトリ移動時に先頭行に移動
 - [x] 入力に input() を使用する
+    - [ ] 補完を有効にする？
 - [ ] popdir#open() でオプション引数を受け取る
 - [ ] `gj`: 10j
 - [ ] `gk`: 10k
 - [ ] ignore list(__pycache__/など)
-- [x] infoにwinidを入れる
 - [ ] シンボリックリンク対応
 - [ ] new fileでcompletion
 - [ ] popup_create()の使用を検討する
@@ -47,3 +33,27 @@
 - [ ] 読み取り専用でファイルを開く
 - [ ] `<space>`: <enter>と同じにする
 - [ ] ソート順: ディレクトリ/ファイルの次に大文字/小文字でならべる(netrwにあわせる)
+
+対応済み
+--------
+
+- [x] PopDir コマンドで引数を受け取る
+    - [x] 引数でファイルパスの補完が可能か調べる
+        - `-complete-dir`でOK
+- [x] Vim9 scriptに書き換え
+- [x] パフォーマンス改善
+    - 案1: Vim9 script
+    - 案2: win_execute() でキー操作をハンドリングするのではなくポップアップウィンドウのバッファで直接キーマップできないか
+    - 案3: ダブルバッファリング的な方法(ポップアップウィンドウに表示されているバッファと違う隠れたバッファで状態を変更してバッファを入れ替える)
+    - forは遅いのでなるべくmap()を使う(def関数ならforでも早いかも)
+    - 検索にsearch()を追加(normalコマンド+`/`より早い)
+    - readdirex()が遅い場合があるようなのでreaddir()＋isdirectory()を使う
+    - 解決: 会社で遅かったのはreaddirex()だったもよう。readdir()+isdirectory()で解消された
+- [x] `~`: go to home directory
+- [x] すべての関数に abort を付ける
+- [x] サブディレクトリ移動時に先頭行に移動
+- [x] infoにwinidを入れる
+- [x] `/`: forward search
+- [x] `?`: backward search
+- [x] `%`: new file (use input())
+    - [x] ファイルを作成したらedit

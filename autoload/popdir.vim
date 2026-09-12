@@ -1,7 +1,7 @@
 vim9script
 
 # File: popdir.vim
-# Description: Display a list of directory entries in the popup window
+# Description: Directory browser in popup window.
 # Author: Teppei Hamada <temada@gmail.com>
 # Version: 0.1
 
