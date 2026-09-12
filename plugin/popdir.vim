@@ -1,18 +1,10 @@
-" File: popdir.vim
-" Description: Display a list of directory entries in the popup window
-" Author: Teppei Hamada <temada@gmail.com>
-" Version: 0.1
+vim9script
 
-if exists('g:loaded_popdir')
-  finish
-endif
-let g:loaded_popdir = 1
+# File: popdir.vim
+# Description: Display a list of directory entries in the popup window
+# Author: Teppei Hamada <temada@gmail.com>
+# Version: 0.1
 
-let s:cpo_save = &cpo
-set cpo&vim
+import autoload 'popdir.vim'
 
-command PopDir call popdir#open()
-
-let &cpo = s:cpo_save
-unlet s:cpo_save
-
+command PopDir popdir.Open()

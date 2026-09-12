@@ -1,22 +1,31 @@
-" File: popdir.vim
-" Description: Display a list of directory entries in the popup window
-" Author: Teppei Hamada <temada@gmail.com>
-" Version: 0.1
+vim9script
 
-let g:popdir_show_hidden = 1
+# File: popdir.vim
+# Description: Display a list of directory entries in the popup window
+# Author: Teppei Hamada <temada@gmail.com>
+# Version: 0.1
 
-def! popdir#open(path: string = ''): void
+const POPDIR_DEFAULT_OPTIONS = {
+    show_hidden: true,
+}
+
+export def Open(path: string = ''): void
     var dirpath = path
     if empty(dirpath)
         const curpath = expand('%:p')
         if empty(curpath)
             dirpath = getcwd()
         else
-            dirpath = s:Parent(curpath)
+            dirpath = Parent(curpath)
         endif
     endif
 
-    const names = s:listdir(dirpath, g:popdir_show_hidden)
+    final options: dict<any> = copy(POPDIR_DEFAULT_OPTIONS)
+    if exists('g:popdir_options')
+        extend(options, g:popdir_options)
+    endif
+
+    const names = ListDir(dirpath, options.show_hidden)
     const winid = popup_menu(names, {
         maxheight: 40,
         minheight: 30,
@@ -24,33 +33,33 @@ def! popdir#open(path: string = ''): void
         pos: 'topleft',
         line: 'cursor+1',
         col: 'cursor+1',
-        title: s:title(dirpath),
-        callback: s:callback,
-        filter: s:filter,
+        title: Title(dirpath),
+        callback: Callback,
+        filter: Filter,
     })
-    s:setinfo(winid, {
+    SetInfo(winid, {
         winid: winid,
         dirpath: dirpath,
         names: names,
-        show_hidden: g:popdir_show_hidden,
+        show_hidden: options.show_hidden,
     })
 enddef
 
-def! s:newinfo(): dict<any>
+def NewInfo(): dict<any>
     return {
         winid: 0,
         dirpath: '',
         names: [],
         name: '',
         path: '',
-        isdir: 0,
+        isdir: false,
         char_stack: [],
-        show_hidden: 0,
+        show_hidden: false,
     }
 enddef
 
-def! s:setinfo(winid: number, data: dict<any>): void
-    final info = getwinvar(winid, 'info') ?? s:newinfo()
+def SetInfo(winid: number, data: dict<any>): void
+    final info = getwinvar(winid, 'info') ?? NewInfo()
     for [key, value] in items(data)
         if !has_key(info, key)
             throw $'unexpected info key: {key}'
@@ -60,30 +69,30 @@ def! s:setinfo(winid: number, data: dict<any>): void
     setwinvar(winid, 'info', info)
 enddef
 
-def! s:getinfo(winid: number): dict<any>
-    final info = getwinvar(winid, 'info') ?? s:newinfo()
+def GetInfo(winid: number): dict<any>
+    final info = getwinvar(winid, 'info') ?? NewInfo()
     win_execute(winid, 'vim9cmd w:name = getline(".")')
     const name = getwinvar(winid, 'name')
-    info.name = s:trimslash(name)
+    info.name = TrimSlash(name)
     info.isdir = name[-1 :] == '/'
     info.path = $'{info.dirpath}/{info.name}'
     return info
 enddef
 
-def! s:Parent(path: string): string
+def Parent(path: string): string
     return fnamemodify(path, ':h')
 enddef
 
-def! s:sort(names: list<string>): list<string>
-    return sort(names, s:compare)
+def Sort(names: list<string>): list<string>
+    return sort(names, Compare)
 enddef
 
-def! s:compare(a: string, b: string): number
+def Compare(a: string, b: string): number
     const a_is_dir = a[-1 :] == '/'
     const b_is_dir = b[-1 :] == '/'
 
-    const a_trimmed = s:trimslash(a)
-    const b_trimmed = s:trimslash(b)
+    const a_trimmed = TrimSlash(a)
+    const b_trimmed = TrimSlash(b)
 
     if a_is_dir && !b_is_dir
         return -1
@@ -100,55 +109,55 @@ def! s:compare(a: string, b: string): number
     endif
 enddef
 
-def! s:callback(winid: number, result: number): void
+def Callback(winid: number, result: number): void
     if result == -1
         return
     endif
-    const info = s:getinfo(winid)
+    const info = GetInfo(winid)
     execute "silent edit " .. info.path
 enddef
 
-def! s:title(path: string): string
+def Title(path: string): string
     const path_tilde = fnamemodify(path, ':~')
     return $'  {path_tilde}  '
 enddef
 
-def! s:trimslash(s: string): string
+def TrimSlash(s: string): string
     return trim(s, '/', 2)
 enddef
 
-" TODO: symlink
-def! s:suffix(dirpath: string, name: string): string
+# TODO: symlink
+def Suffix(dirpath: string, name: string): string
     return (isdirectory($'{dirpath}/{name}')) ? '/' : ''
 enddef
 
-def! s:listdir(dirpath: string, hidden: bool = false): list<string>
-    final names = map(readdir(dirpath), (_, name) => name .. s:suffix(dirpath, name))
-    return s:sort(filter(names, (_, name) => hidden || name[0] != '.'))
+def ListDir(dirpath: string, hidden: bool = false): list<string>
+    final names = map(readdir(dirpath), (_, name) => name .. Suffix(dirpath, name))
+    return Sort(filter(names, (_, name) => hidden || name[0] != '.'))
 enddef
 
-def! s:update(winid: number, dirpath: string): void
-    const info = s:getinfo(winid)
-    const names = s:listdir(dirpath, info.show_hidden)
-    s:setinfo(winid, { dirpath: dirpath, names: names })
+def Update(winid: number, dirpath: string): void
+    const info = GetInfo(winid)
+    const names = ListDir(dirpath, info.show_hidden)
+    SetInfo(winid, { dirpath: dirpath, names: names })
     popup_settext(winid, names)
-    popup_setoptions(winid, { title: s:title(dirpath) })
+    popup_setoptions(winid, { title: Title(dirpath) })
 enddef
 
-def! s:filter(winid: number, key: string): bool
-    const info = s:getinfo(winid)
+def Filter(winid: number, key: string): bool
+    const info = GetInfo(winid)
 
     # サブディレクトリを表示
     if key == "\<Enter>" && info.isdir
-        s:DoSubDir(info)
+        DoSubDir(info)
         return true
     endif
 
     # 一つ上のディレクトリに移動
     if key == '-'
         const prev_name = fnamemodify(info.dirpath, ':t')
-        const parent = s:Parent(info.dirpath)
-        s:update(info.winid, parent)
+        const parent = Parent(info.dirpath)
+        Update(info.winid, parent)
         # TODO: escape
         win_execute(info.winid, $":normal! /{prev_name}\<Enter>")
         return true
@@ -222,13 +231,13 @@ def! s:filter(winid: number, key: string): bool
     # h: Toggle display hidden files
     if key == 'h'
         info.show_hidden = !info.show_hidden
-        s:update(info.winid, info.dirpath)
+        Update(info.winid, info.dirpath)
         return true
     endif
 
     # %: Create new file and edit
     if key == '%'
-        s:DoNewFile(info)
+        DoNewFile(info)
         return true
     endif
 
@@ -242,14 +251,14 @@ def! s:filter(winid: number, key: string): bool
             if result != 0
                 echoerr $'Failed to delete file: {path}'
             endif
-            s:update(info.winid, info.dirpath)
+            Update(info.winid, info.dirpath)
         endif
         return true
     endif
 
     # ~: Go to home directory
     if key == '~'
-        s:update(info.winid, expand('~'))
+        Update(info.winid, expand('~'))
         return true
     endif
 
@@ -275,12 +284,12 @@ def! s:filter(winid: number, key: string): bool
     return popup_filter_menu(info.winid, key)
 enddef
 
-def! s:DoSubDir(info: dict<any>): void
-    s:update(info.winid, info.path)
+def DoSubDir(info: dict<any>): void
+    Update(info.winid, info.path)
     win_execute(info.winid, 'vim9cmd cursor(1, 1)')
 enddef
 
-def! s:DoNewFile(info: dict<any>): void
+def DoNewFile(info: dict<any>): void
     const name = trim(input('New file: '))
     if empty(name)
         return
