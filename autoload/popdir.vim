@@ -45,6 +45,31 @@ export def Open(path: string = ''): void
     })
 enddef
 
+class State
+    var winid: number
+    var dirpath: string
+    var names: list<string>
+    var name: string
+    var key_stack: list<string>
+    var show_hidden: bool
+
+    def IsDir(): bool
+        return this.name[-1 :] == '/'
+    enddef
+
+    def Path(): string
+        return $'{this.dirpath}/{this.name}'
+    enddef
+
+    def Set(): void
+        throw 'not implemented'
+    enddef
+
+    static def Get(): State
+        throw 'not implemented'
+    enddef
+endclass
+
 def NewInfo(): dict<any>
     return {
         winid: 0,
