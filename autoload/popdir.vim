@@ -45,7 +45,6 @@ export def Open(path: string = ''): void
     })
 
     State.new(winid, dirpath, names, options.show_hidden).Set()
-    echo State.Get(winid)
 enddef
 
 class State
@@ -64,7 +63,15 @@ class State
     enddef
 
     static def Get(winid: number): State
-        return getwinvar(winid, 'state')
+        final state = getwinvar(winid, 'state')
+        if !state
+            throw $'failed to get state: winid={winid}'
+        endif
+
+        win_execute(winid, 'vim9cmd w:name = getline(".")')
+        const name = getwinvar(winid, 'name')
+        state.name = TrimSlash(name)
+        return state
     enddef
 
     def IsDir(): bool
@@ -177,7 +184,12 @@ def Update(winid: number, dirpath: string): void
 enddef
 
 def Filter(winid: number, key: string): bool
+    if strtrans(key) == '<80><fd>`'
+        return 1
+    endif
+
     const info = GetInfo(winid)
+    const state = State.Get(winid)
 
     # サブディレクトリを表示
     if key == "\<Enter>" && info.isdir
