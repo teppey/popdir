@@ -43,7 +43,9 @@ export def Open(path: string = ''): void
         names: names,
         show_hidden: options.show_hidden,
     })
-    echo State.new()
+
+    State.new(winid, dirpath, names, options.show_hidden).Set()
+    echo State.Get(winid)
 enddef
 
 class State
@@ -57,6 +59,14 @@ class State
     def new(this.winid, this.dirpath, this.names, this.show_hidden)
     enddef
 
+    def Set(): void
+        setwinvar(this.winid, 'state', this)
+    enddef
+
+    static def Get(winid: number): State
+        return getwinvar(winid, 'state')
+    enddef
+
     def IsDir(): bool
         return this.name[-1 :] == '/'
     enddef
@@ -65,13 +75,6 @@ class State
         return $'{this.dirpath}/{this.name}'
     enddef
 
-    def Set(): void
-        throw 'not implemented'
-    enddef
-
-    static def Get(): State
-        throw 'not implemented'
-    enddef
 endclass
 
 def NewInfo(): dict<any>
