@@ -43,6 +43,7 @@ export def Open(path: string = ''): void
         names: names,
         show_hidden: options.show_hidden,
     })
+    echo State.new()
 enddef
 
 class State
@@ -52,6 +53,9 @@ class State
     var name: string
     var key_stack: list<string>
     var show_hidden: bool
+
+    def new(this.winid, this.dirpath, this.names, this.show_hidden)
+    enddef
 
     def IsDir(): bool
         return this.name[-1 :] == '/'
