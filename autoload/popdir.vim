@@ -52,6 +52,7 @@ class State
     var dirpath: string
     var names: list<string>
     var name: string
+    var isdir: bool
     var key_stack: list<string>
     var show_hidden: bool
 
@@ -71,11 +72,8 @@ class State
         win_execute(winid, 'vim9cmd w:name = getline(".")')
         const name = getwinvar(winid, 'name')
         state.name = TrimSlash(name)
+        state.isdir = name[-1 :] == '/'
         return state
-    enddef
-
-    def IsDir(): bool
-        return this.name[-1 :] == '/'
     enddef
 
     def Path(): string
@@ -192,7 +190,8 @@ def Filter(winid: number, key: string): bool
     const state = State.Get(winid)
 
     # サブディレクトリを表示
-    if key == "\<Enter>" && info.isdir
+    # if key == "\<Enter>" && info.isdir
+    if key == "\<Enter>" && state.isdir
         DoSubDir(info)
         return true
     endif
