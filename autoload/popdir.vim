@@ -63,6 +63,14 @@ class State
         setwinvar(this.winid, 'state', this)
     enddef
 
+    def SetDirPath(dirpath: string): void
+        this.dirpath = path
+    enddef
+
+    def SetNames(names: list<string>): void
+        this.names = names
+    enddef
+
     static def Get(winid: number): State
         final state = getwinvar(winid, 'state')
         if !state
@@ -174,9 +182,18 @@ def ListDir(dirpath: string, hidden: bool = false): list<string>
 enddef
 
 def Update(winid: number, dirpath: string): void
-    const info = GetInfo(winid)
     const names = ListDir(dirpath, info.show_hidden)
+
+    # info
+    const info = GetInfo(winid)
     SetInfo(winid, { dirpath: dirpath, names: names })
+
+    # state
+    const state = State.Get(winid)
+    state.SetDirPath(dirpath)
+    state.SetNames(names)
+    state.Set()
+
     popup_settext(winid, names)
     popup_setoptions(winid, { title: Title(dirpath) })
 enddef
