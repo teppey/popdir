@@ -163,6 +163,9 @@ def Update(winid: number, dirpath: string): void
     popup_setoptions(winid, { title: Title(dirpath) })
 enddef
 
+const COMMAND_AS_IS = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
+const COMMAND_SCROLL_CURSOR = ['z', 't', 'b']
+
 def Filter(winid: number, key: string): bool
     if strtrans(key) == '<80><fd>`'
         return true
@@ -170,39 +173,24 @@ def Filter(winid: number, key: string): bool
 
     const state = State.Get(winid)
 
-    # サブディレクトリを表示
     if key == "\<Enter>" && state.isdir
+        # サブディレクトリを表示
         DoSubDir(state)
-        return true
-    endif
-
-    # 一つ上のディレクトリに移動
-    if key == '-'
+    elseif key == '-'
+        # 一つ上のディレクトリに移動
         DoParentDir(state)
-        return true
-    endif
-
-    # <Home>: Move to first line
-    if key == "\<Home>"
+    elseif key == "\<Home>"
+        # <Home>: Move to first line
         DoFirstLine(state)
-        return true
-    endif
-
-    # gg: Move to first line
-    if key == 'g' && state.key_stack[: -1] == ['g']
+    elseif key == 'g' && state.key_stack[: -1] == ['g']
+        # gg: Move to first line
         DoFirstLine(state)
         state.ClearKeyStack()
-        return true
-    endif
-
-    # <End>: Move to last line
-    if key == "\<End>"
+    elseif key == "\<End>"
+        # <End>: Move to last line
         DoLastLine(state)
-        return true
-    endif
-
-    # G: Move to last line if no <count>, or move to <count> line
-    if key == 'G'
+    elseif key == 'G'
+        # G: Move to last line if no <count>, or move to <count> line
         const num_arg = state.NumArg()
         if num_arg > 0
             DoLine(state, num_arg)
@@ -210,81 +198,50 @@ def Filter(winid: number, key: string): bool
             DoLastLine(state)
         endif
         state.ClearKeyStack()
-        return true
-    endif
-
-    # j: <count> lines downward
-    # k: <count lines upward
-    # H: Line <count> from top of window
-    # M: Middle line of window
-    # L: Line <count> from bottom of window
-    # <C-F>: Page down
-    # <C-B>: Page up
-    const command_as_is = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
-    if index(command_as_is, key) >= 0
+    elseif index(COMMAND_AS_IS, key) >= 0
+        # j: <count> lines downward
+        # k: <count lines upward
+        # H: Line <count> from top of window
+        # M: Middle line of window
+        # L: Line <count> from bottom of window
+        # <C-F>: Page down
+        # <C-B>: Page up
         DoCommandAsIs(state, key)
-        return true
-    endif
-
-    # Push key stack for `gg` and <count> arg
-    if key =~ '[gz0-9]'
+    elseif key =~ '[gz0-9]'
+        # Push key stack for `gg` and <count> arg
         add(state.key_stack, key)
-        return true
-    endif
-
-    # zz: Cursor line to center of window
-    # zt: Cursor line to top of window
-    # zb: Cursor line to bottom of window
-    const command_scroll_cursor = ['z', 't', 'b']
-    if index(command_scroll_cursor, key) >= 0 && get(state.key_stack, -1, '') ==# 'z'
+    elseif index(COMMAND_SCROLL_CURSOR, key) >= 0 && get(state.key_stack, -1, '') ==# 'z'
+        # zz: Cursor line to center of window
+        # zt: Cursor line to top of window
+        # zb: Cursor line to bottom of window
         DoCursorRelativeScroll(state, key)
-        return true
-    endif
-
-    # h: Toggle display hidden files
-    if key == 'h'
+    elseif key == 'h'
+        # h: Toggle display hidden files
         DoToggleHidden(state)
-        return true
-    endif
-
-    # %: Create a new file and edit it
-    if key == '%'
+    elseif key == '%'
+        # %: Create a new file and edit it
         DoNewFile(state)
-        return true
-    endif
-
-    # D: Delete a file
-    # TODO: directory
-    if key == 'D'
+    elseif key == 'D'
+        # D: Delete a file
+        # TODO: directory
         DoDelete(state)
-        return true
-    endif
-
-    # ~: Go to home directory
-    if key == '~'
+    elseif key == '~'
+        # ~: Go to home directory
         DoHome(state)
-        return true
-    endif
-
-    # /: Forward search
-    if key == '/'
+    elseif key == '/'
+        # /: Forward search
         DoForwardSearch(state)
-        return true
-    endif
-
-    # ?: Backword search
-    if key == '?'
+    elseif key == '?'
+        # ?: Backword search
         DoBackwardSearch(state)
-        return true
-    endif
-
-    if key == 'r'
-        # TODO: リロード
+    elseif key == 'r'
+        # `r`: リロード
         DoReload(state)
-        return true
+    else
+        popup_filter_menu(state.winid, key)
     endif
 
-    return popup_filter_menu(state.winid, key)
+    return true
 enddef
 
 def DoSubDir(state: State): void
