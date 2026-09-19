@@ -84,6 +84,10 @@ class State
         this.names = names
     enddef
 
+    def SetShowHidden(show_hidden: bool): void
+        this.show_hidden = show_hidden
+    enddef
+
     def Path(): string
         return $'{this.dirpath}/{this.name}'
     enddef
@@ -185,13 +189,8 @@ def ListDir(dirpath: string, hidden: bool = false): list<string>
 enddef
 
 def Update(winid: number, dirpath: string): void
-    # info
-    const info = GetInfo(winid)
-    const names = ListDir(dirpath, info.show_hidden)
-    SetInfo(winid, { dirpath: dirpath, names: names })
-
-    # state
     const state = State.Get(winid)
+    const names = ListDir(dirpath, state.show_hidden)
     state.SetDirPath(dirpath)
     state.SetNames(names)
     state.Set()
@@ -291,8 +290,8 @@ def Filter(winid: number, key: string): bool
 
     # h: Toggle display hidden files
     if key == 'h'
-        info.show_hidden = !info.show_hidden
-        Update(info.winid, info.dirpath)
+        state.SetShowHidden(!state.show_hidden)
+        Update(state.winid, state.dirpath)
         return true
     endif
 
