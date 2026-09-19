@@ -63,14 +63,6 @@ class State
         setwinvar(this.winid, 'state', this)
     enddef
 
-    def SetDirPath(dirpath: string): void
-        this.dirpath = path
-    enddef
-
-    def SetNames(names: list<string>): void
-        this.names = names
-    enddef
-
     static def Get(winid: number): State
         final state = getwinvar(winid, 'state')
         if !state
@@ -84,10 +76,21 @@ class State
         return state
     enddef
 
+    def SetDirPath(dirpath: string): void
+        this.dirpath = dirpath
+    enddef
+
+    def SetNames(names: list<string>): void
+        this.names = names
+    enddef
+
     def Path(): string
         return $'{this.dirpath}/{this.name}'
     enddef
 
+    def ClearKeyStack(): void
+        this.key_stack = []
+    enddef
 endclass
 
 def NewInfo(): dict<any>
@@ -182,10 +185,9 @@ def ListDir(dirpath: string, hidden: bool = false): list<string>
 enddef
 
 def Update(winid: number, dirpath: string): void
-    const names = ListDir(dirpath, info.show_hidden)
-
     # info
     const info = GetInfo(winid)
+    const names = ListDir(dirpath, info.show_hidden)
     SetInfo(winid, { dirpath: dirpath, names: names })
 
     # state
@@ -207,50 +209,49 @@ def Filter(winid: number, key: string): bool
     const state = State.Get(winid)
 
     # サブディレクトリを表示
-    # if key == "\<Enter>" && info.isdir
     if key == "\<Enter>" && state.isdir
-        DoSubDir(info)
+        DoSubDir(state)
         return true
     endif
 
     # 一つ上のディレクトリに移動
     if key == '-'
-        const prev_name = fnamemodify(info.dirpath, ':t')
-        const parent = Parent(info.dirpath)
-        Update(info.winid, parent)
+        const prev_name = fnamemodify(state.dirpath, ':t')
+        const parent = Parent(state.dirpath)
+        Update(state.winid, parent)
         # TODO: escape
-        win_execute(info.winid, $":normal! /{prev_name}\<Enter>")
+        win_execute(state.winid, $":normal! /{prev_name}\<Enter>")
         return true
     endif
 
     # <Home>: Move to first line
     if key == "\<Home>"
-        win_execute(info.winid, ':1')
+        win_execute(state.winid, ':1')
         return true
     endif
 
     # gg: Move to first line
-    if key == 'g' && info.char_stack[: -1] == ['g']
-        info.char_stack = []
-        win_execute(info.winid, ':1')
+    if key == 'g' && state.key_stack[: -1] == ['g']
+        state.ClearKeyStack()
+        win_execute(state.winid, ':1')
         return true
     endif
 
     # <End>: Move to last line
     if key == "\<End>"
-        win_execute(info.winid, ':normal! G')
+        win_execute(state.winid, ':normal! G')
         return true
     endif
 
     # G: Goto line <count>, default last line
     if key == 'G'
-        const num_arg = str2nr(join(info.char_stack, ''))
+        const num_arg = str2nr(join(state.key_stack, ''))
         if num_arg > 0
-            win_execute(info.winid, $':normal! {num_arg}G')
+            win_execute(state.winid, $':normal! {num_arg}G')
         else
-            win_execute(info.winid, ':normal! G')
+            win_execute(state.winid, ':normal! G')
         endif
-        info.char_stack = []
+        state.ClearKeyStack()
         return true
     endif
 
@@ -263,18 +264,18 @@ def Filter(winid: number, key: string): bool
     # <C-B>: Page up
     const command_as_is = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
     if index(command_as_is, key) >= 0
-        var num_arg = str2nr(join(info.char_stack, ''))
+        var num_arg = str2nr(join(state.key_stack, ''))
         if num_arg < 1
             num_arg = 1
         endif
-        win_execute(info.winid, $':normal! {num_arg}{key}')
-        info.char_stack = []
+        win_execute(state.winid, $':normal! {num_arg}{key}')
+        state.ClearKeyStack()
         return true
     endif
 
-    # For `gg` and <count> arg
+    # Push key stack for `gg` and <count> arg
     if key =~ '[gz0-9]'
-        add(info.char_stack, key)
+        add(state.key_stack, key)
         return true
     endif
 
@@ -282,9 +283,9 @@ def Filter(winid: number, key: string): bool
     # zt: Cursor line to top of window
     # zb: Cursor line to bottom of window
     const command_scroll_cursor = ['z', 't', 'b']
-    if index(command_scroll_cursor, key) >= 0 && get(info.char_stack, -1, '') ==# 'z'
-        info.char_stack = []
-        win_execute(info.winid, $':normal! z{key}')
+    if index(command_scroll_cursor, key) >= 0 && get(state.key_stack, -1, '') ==# 'z'
+        state.ClearKeyStack()
+        win_execute(state.winid, $':normal! z{key}')
         return true
     endif
 
@@ -344,9 +345,9 @@ def Filter(winid: number, key: string): bool
     return popup_filter_menu(info.winid, key)
 enddef
 
-def DoSubDir(info: dict<any>): void
-    Update(info.winid, info.path)
-    win_execute(info.winid, 'vim9cmd cursor(1, 1)')
+def DoSubDir(state: State): void
+    Update(state.winid, state.Path())
+    win_execute(state.winid, 'vim9cmd cursor(1, 1)')
 enddef
 
 def DoNewFile(info: dict<any>): void
