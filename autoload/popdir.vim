@@ -44,6 +44,7 @@ enddef
 class State
     var winid: number
     var dirpath: string
+    var prev_dirpath: string
     var names: list<string>
     var name: string
     var isdir: bool
@@ -71,6 +72,7 @@ class State
     enddef
 
     def SetDirPath(dirpath: string): void
+        this.prev_dirpath = this.dirpath
         this.dirpath = dirpath
     enddef
 
@@ -153,14 +155,15 @@ def ListDir(dirpath: string, hidden: bool = false): list<string>
 enddef
 
 def Update(winid: number, dirpath: string): void
+    const trimmed = TrimSlash(dirpath)
     const state = State.Get(winid)
-    const names = ListDir(dirpath, state.show_hidden)
-    state.SetDirPath(dirpath)
+    const names = ListDir(trimmed, state.show_hidden)
+    state.SetDirPath(trimmed)
     state.SetNames(names)
     state.Set()
 
     popup_settext(winid, names)
-    popup_setoptions(winid, { title: Title(dirpath) })
+    popup_setoptions(winid, { title: Title(trimmed) })
 enddef
 
 const COMMAND_AS_IS = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
@@ -239,6 +242,8 @@ def Filter(winid: number, key: string): bool
         DoReload(state)
     elseif key == 'c'
         DoChangeDirectory(state)
+    elseif key == 'p'
+        DoPrevDir(state)
     else
         popup_filter_menu(state.winid, key)
     endif
@@ -332,7 +337,7 @@ def DoReload(state: State): void
 enddef
 
 def DoChangeDirectory(state: State): void
-    const dirpath = expand(trim(input('Directory: ', '', 'dir')))
+    const dirpath = expand(trim(input('Change Directory: ', '', 'dir')))
     if empty(dirpath)
         return
     endif
@@ -341,4 +346,10 @@ def DoChangeDirectory(state: State): void
         return
     endif
     Update(state.winid, dirpath)
+enddef
+
+def DoPrevDir(state: State): void
+    if !empty(state.prev_dirpath)
+        Update(state.winid, state.prev_dirpath)
+    endif
 enddef
