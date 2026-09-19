@@ -237,15 +237,13 @@ def Filter(winid: number, key: string): bool
     # zb: Cursor line to bottom of window
     const command_scroll_cursor = ['z', 't', 'b']
     if index(command_scroll_cursor, key) >= 0 && get(state.key_stack, -1, '') ==# 'z'
-        state.ClearKeyStack()
-        win_execute(state.winid, $':normal! z{key}')
+        DoCursorRelativeScroll(state, key)
         return true
     endif
 
     # h: Toggle display hidden files
     if key == 'h'
-        state.SetShowHidden(!state.show_hidden)
-        Update(state.winid, state.dirpath)
+        DoToggleHidden(state)
         return true
     endif
 
@@ -258,40 +256,31 @@ def Filter(winid: number, key: string): bool
     # D: Delete a file
     # TODO: directory
     if key == 'D'
-        const choice = confirm($'Delete file?: {state.name}', "&Yes\n&No", 2)
-        if choice == 1
-            const path = state.Path()
-            const result = delete(path)
-            if result != 0
-                echoerr $'Failed to delete file: {path}'
-            endif
-            Update(state.winid, state.dirpath)
-        endif
+        DoDelete(state)
         return true
     endif
 
     # ~: Go to home directory
     if key == '~'
-        Update(state.winid, expand('~'))
+        DoHome(state)
         return true
     endif
 
     # /: Forward search
     if key == '/'
-        const value = input('/')
-        win_execute(state.winid, $":normal! /{value}\<Enter>", 'silent!')
+        DoForwardSearch(state)
         return true
     endif
 
     # ?: Backword search
     if key == '?'
-        const value = input('?')
-        win_execute(state.winid, $":normal! ?{value}\<Enter>", 'silent!')
+        DoBackwardSearch(state)
         return true
     endif
 
     if key == 'r'
         # TODO: リロード
+        DoReload(state)
         return true
     endif
 
@@ -329,6 +318,16 @@ def DoCommandAsIs(state: State, key: string): void
     state.ClearKeyStack()
 enddef
 
+def DoCursorRelativeScroll(state: State, key: string): void
+    win_execute(state.winid, $':normal! z{key}')
+    state.ClearKeyStack()
+enddef
+
+def DoToggleHidden(state: State): void
+    state.SetShowHidden(!state.show_hidden)
+    Update(state.winid, state.dirpath)
+enddef
+
 def DoNewFile(state: State): void
     const name = trim(input('New file: '))
     if empty(name)
@@ -341,4 +340,34 @@ def DoNewFile(state: State): void
     endif
     popup_close(state.winid, -1)
     :execute 'silent edit ' .. path
+enddef
+
+def DoDelete(state: State): void
+    const choice = confirm($'Delete file?: {state.name}', "&Yes\n&No", 2)
+    if choice == 1
+        const path = state.Path()
+        const result = delete(path)
+        if result != 0
+            echoerr $'Failed to delete file: {path}'
+        endif
+        Update(state.winid, state.dirpath)
+    endif
+enddef
+
+def DoHome(state: State): void
+    Update(state.winid, expand('~'))
+enddef
+
+def DoForwardSearch(state: State): void
+    const value = input('/')
+    win_execute(state.winid, $":normal! /{value}\<Enter>", 'silent!')
+enddef
+
+def DoBackwardSearch(state: State): void
+    const value = input('?')
+    win_execute(state.winid, $":normal! ?{value}\<Enter>", 'silent!')
+enddef
+
+def DoReload(state: State): void
+    Update(state.winid, state.dirpath)
 enddef
