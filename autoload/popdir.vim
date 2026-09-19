@@ -37,12 +37,6 @@ export def Open(path: string = ''): void
         callback: Callback,
         filter: Filter,
     })
-    SetInfo(winid, {
-        winid: winid,
-        dirpath: dirpath,
-        names: names,
-        show_hidden: options.show_hidden,
-    })
 
     State.new(winid, dirpath, names, options.show_hidden).Set()
 enddef
@@ -97,40 +91,6 @@ class State
     enddef
 endclass
 
-def NewInfo(): dict<any>
-    return {
-        winid: 0,
-        dirpath: '',
-        names: [],
-        name: '',
-        path: '',
-        isdir: false,
-        char_stack: [],
-        show_hidden: false,
-    }
-enddef
-
-def SetInfo(winid: number, data: dict<any>): void
-    final info = getwinvar(winid, 'info') ?? NewInfo()
-    for [key, value] in items(data)
-        if !has_key(info, key)
-            throw $'unexpected info key: {key}'
-        endif
-        info[key] = value
-    endfor
-    setwinvar(winid, 'info', info)
-enddef
-
-def GetInfo(winid: number): dict<any>
-    final info = getwinvar(winid, 'info') ?? NewInfo()
-    win_execute(winid, 'vim9cmd w:name = getline(".")')
-    const name = getwinvar(winid, 'name')
-    info.name = TrimSlash(name)
-    info.isdir = name[-1 :] == '/'
-    info.path = $'{info.dirpath}/{info.name}'
-    return info
-enddef
-
 def Parent(path: string): string
     return fnamemodify(path, ':h')
 enddef
@@ -165,8 +125,8 @@ def Callback(winid: number, result: number): void
     if result == -1
         return
     endif
-    const info = GetInfo(winid)
-    execute "silent edit " .. info.path
+    const state = State.Get(winid)
+    execute "silent edit " .. state.Path()
 enddef
 
 def Title(path: string): string
@@ -204,7 +164,6 @@ def Filter(winid: number, key: string): bool
         return 1
     endif
 
-    const info = GetInfo(winid)
     const state = State.Get(winid)
 
     # サブディレクトリを表示
@@ -295,44 +254,44 @@ def Filter(winid: number, key: string): bool
         return true
     endif
 
-    # %: Create new file and edit
+    # %: Create a new file and edit it
     if key == '%'
-        DoNewFile(info)
+        DoNewFile(state)
         return true
     endif
 
-    # D: Delete file
+    # D: Delete a file
     # TODO: directory
     if key == 'D'
-        const choice = confirm($'Delete file?: {info.name}', "&Yes\n&No", 2)
+        const choice = confirm($'Delete file?: {state.name}', "&Yes\n&No", 2)
         if choice == 1
-            const path = $'{info.dirpath}/{info.name}'
+            const path = state.Path()
             const result = delete(path)
             if result != 0
                 echoerr $'Failed to delete file: {path}'
             endif
-            Update(info.winid, info.dirpath)
+            Update(state.winid, state.dirpath)
         endif
         return true
     endif
 
     # ~: Go to home directory
     if key == '~'
-        Update(info.winid, expand('~'))
+        Update(state.winid, expand('~'))
         return true
     endif
 
     # /: Forward search
     if key == '/'
         const value = input('/')
-        win_execute(info.winid, $":normal! /{value}\<Enter>", 'silent!')
+        win_execute(state.winid, $":normal! /{value}\<Enter>", 'silent!')
         return true
     endif
 
     # ?: Backword search
     if key == '?'
         const value = input('?')
-        win_execute(info.winid, $":normal! ?{value}\<Enter>", 'silent!')
+        win_execute(state.winid, $":normal! ?{value}\<Enter>", 'silent!')
         return true
     endif
 
@@ -341,7 +300,7 @@ def Filter(winid: number, key: string): bool
         return true
     endif
 
-    return popup_filter_menu(info.winid, key)
+    return popup_filter_menu(state.winid, key)
 enddef
 
 def DoSubDir(state: State): void
@@ -349,16 +308,16 @@ def DoSubDir(state: State): void
     win_execute(state.winid, 'vim9cmd cursor(1, 1)')
 enddef
 
-def DoNewFile(info: dict<any>): void
+def DoNewFile(state: State): void
     const name = trim(input('New file: '))
     if empty(name)
         return
     endif
-    const path = $'{info.dirpath}/{name}'
+    const path = $'{state.dirpath}/{name}'
     if !empty(glob(path))
         :echoerr $'faild to create file: "{path}" is already exists'
         return
     endif
-    popup_close(info.winid, -1)
+    popup_close(state.winid, -1)
     :execute 'silent edit ' .. path
 enddef
