@@ -237,6 +237,8 @@ def Filter(winid: number, key: string): bool
     elseif key == 'r'
         # `r`: リロード
         DoReload(state)
+    elseif key == 'c'
+        DoChangeDirectory(state)
     else
         popup_filter_menu(state.winid, key)
     endif
@@ -327,4 +329,16 @@ enddef
 
 def DoReload(state: State): void
     Update(state.winid, state.dirpath)
+enddef
+
+def DoChangeDirectory(state: State): void
+    const dirpath = expand(trim(input('Directory: ', '', 'dir')))
+    if empty(dirpath)
+        return
+    endif
+    if !isdirectory(dirpath)
+        :echoerr $'no such directory: {dirpath}'
+        return
+    endif
+    Update(state.winid, dirpath)
 enddef
