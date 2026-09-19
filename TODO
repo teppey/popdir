@@ -1,8 +1,9 @@
 未対応
 ------
 
-- [.] s:filter()内の各ハンドリング処理を個別の関数にする
+- [.] Filter()内の各ハンドリング処理を個別の関数にする
     - 数が多くなってきたので
+- [ ] Filter(): return を1箇所にして常にtrueを返す
 - [ ] `c`: change directory
 - [ ] `p`: back directory
     - [ ] ディレクトリスタックを実装する必要があるかも(`s`?)
@@ -24,7 +25,7 @@
 - [ ] ignore list(__pycache__/など)
 - [ ] シンボリックリンク対応
 - [ ] new fileでcompletion
-- [ ] popup_create()の使用を検討する
+- [ ] popup_create()を使用する
 - [ ] `g:popdir_options`辞書の検討
 - [ ] info.pathをメソッドにする
 - [ ] ファイル・ディレクトリのリネーム

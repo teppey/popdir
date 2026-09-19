@@ -89,6 +89,10 @@ class State
     def ClearKeyStack(): void
         this.key_stack = []
     enddef
+
+    def NumArg(): number
+        return str2nr(join(this.key_stack, ''))
+    enddef
 endclass
 
 def Parent(path: string): string
@@ -161,7 +165,7 @@ enddef
 
 def Filter(winid: number, key: string): bool
     if strtrans(key) == '<80><fd>`'
-        return 1
+        return true
     endif
 
     const state = State.Get(winid)
@@ -174,40 +178,36 @@ def Filter(winid: number, key: string): bool
 
     # 一つ上のディレクトリに移動
     if key == '-'
-        const prev_name = fnamemodify(state.dirpath, ':t')
-        const parent = Parent(state.dirpath)
-        Update(state.winid, parent)
-        # TODO: escape
-        win_execute(state.winid, $":normal! /{prev_name}\<Enter>")
+        DoParentDir(state)
         return true
     endif
 
     # <Home>: Move to first line
     if key == "\<Home>"
-        win_execute(state.winid, ':1')
+        DoFirstLine(state)
         return true
     endif
 
     # gg: Move to first line
     if key == 'g' && state.key_stack[: -1] == ['g']
+        DoFirstLine(state)
         state.ClearKeyStack()
-        win_execute(state.winid, ':1')
         return true
     endif
 
     # <End>: Move to last line
     if key == "\<End>"
-        win_execute(state.winid, ':normal! G')
+        DoLastLine(state)
         return true
     endif
 
-    # G: Goto line <count>, default last line
+    # G: Move to last line if no <count>, or move to <count> line
     if key == 'G'
-        const num_arg = str2nr(join(state.key_stack, ''))
+        const num_arg = state.NumArg()
         if num_arg > 0
-            win_execute(state.winid, $':normal! {num_arg}G')
+            DoLine(state, num_arg)
         else
-            win_execute(state.winid, ':normal! G')
+            DoLastLine(state)
         endif
         state.ClearKeyStack()
         return true
@@ -222,12 +222,7 @@ def Filter(winid: number, key: string): bool
     # <C-B>: Page up
     const command_as_is = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
     if index(command_as_is, key) >= 0
-        var num_arg = str2nr(join(state.key_stack, ''))
-        if num_arg < 1
-            num_arg = 1
-        endif
-        win_execute(state.winid, $':normal! {num_arg}{key}')
-        state.ClearKeyStack()
+        DoCommandAsIs(state, key)
         return true
     endif
 
@@ -305,7 +300,33 @@ enddef
 
 def DoSubDir(state: State): void
     Update(state.winid, state.Path())
-    win_execute(state.winid, 'vim9cmd cursor(1, 1)')
+    win_execute(state.winid, 'vim9 cursor(1, 1)')
+enddef
+
+def DoParentDir(state: State): void
+    const prev_name = fnamemodify(state.dirpath, ':t')
+    const parent = Parent(state.dirpath)
+    Update(state.winid, parent)
+    # TODO: escape
+    win_execute(state.winid, $":normal! /{prev_name}\<Enter>")
+enddef
+
+def DoFirstLine(state: State): void
+    win_execute(state.winid, 'vim9 cursor(1, 1)')
+enddef
+
+def DoLastLine(state: State): void
+    win_execute(state.winid, 'vim9 cursor("$", 1)')
+enddef
+
+def DoLine(state: State, lnum: number): void
+    win_execute(state.winid, $'vim9 cursor({lnum}, 1)')
+enddef
+
+def DoCommandAsIs(state: State, key: string): void
+    var count = state.NumArg() ?? 1
+    win_execute(state.winid, $':normal! {count}{key}')
+    state.ClearKeyStack()
 enddef
 
 def DoNewFile(state: State): void
