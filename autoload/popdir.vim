@@ -37,47 +37,59 @@ export def Open(path: string = ''): void
         callback: Callback,
         filter: Filter,
     })
-    SetInfo(winid, {
-        winid: winid,
-        dirpath: dirpath,
-        names: names,
-        show_hidden: options.show_hidden,
-    })
+
+    State.new(winid, dirpath, names, options.show_hidden).Set()
 enddef
 
-def NewInfo(): dict<any>
-    return {
-        winid: 0,
-        dirpath: '',
-        names: [],
-        name: '',
-        path: '',
-        isdir: false,
-        char_stack: [],
-        show_hidden: false,
-    }
-enddef
+class State
+    var winid: number
+    var dirpath: string
+    var names: list<string>
+    var name: string
+    var isdir: bool
+    var key_stack: list<string>
+    var show_hidden: bool
 
-def SetInfo(winid: number, data: dict<any>): void
-    final info = getwinvar(winid, 'info') ?? NewInfo()
-    for [key, value] in items(data)
-        if !has_key(info, key)
-            throw $'unexpected info key: {key}'
+    def new(this.winid, this.dirpath, this.names, this.show_hidden)
+    enddef
+
+    def Set(): void
+        setwinvar(this.winid, 'state', this)
+    enddef
+
+    static def Get(winid: number): State
+        final state = getwinvar(winid, 'state')
+        if !state
+            throw $'failed to get state: winid={winid}'
         endif
-        info[key] = value
-    endfor
-    setwinvar(winid, 'info', info)
-enddef
 
-def GetInfo(winid: number): dict<any>
-    final info = getwinvar(winid, 'info') ?? NewInfo()
-    win_execute(winid, 'vim9cmd w:name = getline(".")')
-    const name = getwinvar(winid, 'name')
-    info.name = TrimSlash(name)
-    info.isdir = name[-1 :] == '/'
-    info.path = $'{info.dirpath}/{info.name}'
-    return info
-enddef
+        win_execute(winid, 'vim9cmd w:name = getline(".")')
+        const name = getwinvar(winid, 'name')
+        state.name = TrimSlash(name)
+        state.isdir = name[-1 :] == '/'
+        return state
+    enddef
+
+    def SetDirPath(dirpath: string): void
+        this.dirpath = dirpath
+    enddef
+
+    def SetNames(names: list<string>): void
+        this.names = names
+    enddef
+
+    def SetShowHidden(show_hidden: bool): void
+        this.show_hidden = show_hidden
+    enddef
+
+    def Path(): string
+        return $'{this.dirpath}/{this.name}'
+    enddef
+
+    def ClearKeyStack(): void
+        this.key_stack = []
+    enddef
+endclass
 
 def Parent(path: string): string
     return fnamemodify(path, ':h')
@@ -113,8 +125,8 @@ def Callback(winid: number, result: number): void
     if result == -1
         return
     endif
-    const info = GetInfo(winid)
-    execute "silent edit " .. info.path
+    const state = State.Get(winid)
+    execute "silent edit " .. state.Path()
 enddef
 
 def Title(path: string): string
@@ -137,60 +149,67 @@ def ListDir(dirpath: string, hidden: bool = false): list<string>
 enddef
 
 def Update(winid: number, dirpath: string): void
-    const info = GetInfo(winid)
-    const names = ListDir(dirpath, info.show_hidden)
-    SetInfo(winid, { dirpath: dirpath, names: names })
+    const state = State.Get(winid)
+    const names = ListDir(dirpath, state.show_hidden)
+    state.SetDirPath(dirpath)
+    state.SetNames(names)
+    state.Set()
+
     popup_settext(winid, names)
     popup_setoptions(winid, { title: Title(dirpath) })
 enddef
 
 def Filter(winid: number, key: string): bool
-    const info = GetInfo(winid)
+    if strtrans(key) == '<80><fd>`'
+        return 1
+    endif
+
+    const state = State.Get(winid)
 
     # サブディレクトリを表示
-    if key == "\<Enter>" && info.isdir
-        DoSubDir(info)
+    if key == "\<Enter>" && state.isdir
+        DoSubDir(state)
         return true
     endif
 
     # 一つ上のディレクトリに移動
     if key == '-'
-        const prev_name = fnamemodify(info.dirpath, ':t')
-        const parent = Parent(info.dirpath)
-        Update(info.winid, parent)
+        const prev_name = fnamemodify(state.dirpath, ':t')
+        const parent = Parent(state.dirpath)
+        Update(state.winid, parent)
         # TODO: escape
-        win_execute(info.winid, $":normal! /{prev_name}\<Enter>")
+        win_execute(state.winid, $":normal! /{prev_name}\<Enter>")
         return true
     endif
 
     # <Home>: Move to first line
     if key == "\<Home>"
-        win_execute(info.winid, ':1')
+        win_execute(state.winid, ':1')
         return true
     endif
 
     # gg: Move to first line
-    if key == 'g' && info.char_stack[: -1] == ['g']
-        info.char_stack = []
-        win_execute(info.winid, ':1')
+    if key == 'g' && state.key_stack[: -1] == ['g']
+        state.ClearKeyStack()
+        win_execute(state.winid, ':1')
         return true
     endif
 
     # <End>: Move to last line
     if key == "\<End>"
-        win_execute(info.winid, ':normal! G')
+        win_execute(state.winid, ':normal! G')
         return true
     endif
 
     # G: Goto line <count>, default last line
     if key == 'G'
-        const num_arg = str2nr(join(info.char_stack, ''))
+        const num_arg = str2nr(join(state.key_stack, ''))
         if num_arg > 0
-            win_execute(info.winid, $':normal! {num_arg}G')
+            win_execute(state.winid, $':normal! {num_arg}G')
         else
-            win_execute(info.winid, ':normal! G')
+            win_execute(state.winid, ':normal! G')
         endif
-        info.char_stack = []
+        state.ClearKeyStack()
         return true
     endif
 
@@ -203,18 +222,18 @@ def Filter(winid: number, key: string): bool
     # <C-B>: Page up
     const command_as_is = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
     if index(command_as_is, key) >= 0
-        var num_arg = str2nr(join(info.char_stack, ''))
+        var num_arg = str2nr(join(state.key_stack, ''))
         if num_arg < 1
             num_arg = 1
         endif
-        win_execute(info.winid, $':normal! {num_arg}{key}')
-        info.char_stack = []
+        win_execute(state.winid, $':normal! {num_arg}{key}')
+        state.ClearKeyStack()
         return true
     endif
 
-    # For `gg` and <count> arg
+    # Push key stack for `gg` and <count> arg
     if key =~ '[gz0-9]'
-        add(info.char_stack, key)
+        add(state.key_stack, key)
         return true
     endif
 
@@ -222,57 +241,57 @@ def Filter(winid: number, key: string): bool
     # zt: Cursor line to top of window
     # zb: Cursor line to bottom of window
     const command_scroll_cursor = ['z', 't', 'b']
-    if index(command_scroll_cursor, key) >= 0 && get(info.char_stack, -1, '') ==# 'z'
-        info.char_stack = []
-        win_execute(info.winid, $':normal! z{key}')
+    if index(command_scroll_cursor, key) >= 0 && get(state.key_stack, -1, '') ==# 'z'
+        state.ClearKeyStack()
+        win_execute(state.winid, $':normal! z{key}')
         return true
     endif
 
     # h: Toggle display hidden files
     if key == 'h'
-        info.show_hidden = !info.show_hidden
-        Update(info.winid, info.dirpath)
+        state.SetShowHidden(!state.show_hidden)
+        Update(state.winid, state.dirpath)
         return true
     endif
 
-    # %: Create new file and edit
+    # %: Create a new file and edit it
     if key == '%'
-        DoNewFile(info)
+        DoNewFile(state)
         return true
     endif
 
-    # D: Delete file
+    # D: Delete a file
     # TODO: directory
     if key == 'D'
-        const choice = confirm($'Delete file?: {info.name}', "&Yes\n&No", 2)
+        const choice = confirm($'Delete file?: {state.name}', "&Yes\n&No", 2)
         if choice == 1
-            const path = $'{info.dirpath}/{info.name}'
+            const path = state.Path()
             const result = delete(path)
             if result != 0
                 echoerr $'Failed to delete file: {path}'
             endif
-            Update(info.winid, info.dirpath)
+            Update(state.winid, state.dirpath)
         endif
         return true
     endif
 
     # ~: Go to home directory
     if key == '~'
-        Update(info.winid, expand('~'))
+        Update(state.winid, expand('~'))
         return true
     endif
 
     # /: Forward search
     if key == '/'
         const value = input('/')
-        win_execute(info.winid, $":normal! /{value}\<Enter>", 'silent!')
+        win_execute(state.winid, $":normal! /{value}\<Enter>", 'silent!')
         return true
     endif
 
     # ?: Backword search
     if key == '?'
         const value = input('?')
-        win_execute(info.winid, $":normal! ?{value}\<Enter>", 'silent!')
+        win_execute(state.winid, $":normal! ?{value}\<Enter>", 'silent!')
         return true
     endif
 
@@ -281,24 +300,24 @@ def Filter(winid: number, key: string): bool
         return true
     endif
 
-    return popup_filter_menu(info.winid, key)
+    return popup_filter_menu(state.winid, key)
 enddef
 
-def DoSubDir(info: dict<any>): void
-    Update(info.winid, info.path)
-    win_execute(info.winid, 'vim9cmd cursor(1, 1)')
+def DoSubDir(state: State): void
+    Update(state.winid, state.Path())
+    win_execute(state.winid, 'vim9cmd cursor(1, 1)')
 enddef
 
-def DoNewFile(info: dict<any>): void
+def DoNewFile(state: State): void
     const name = trim(input('New file: '))
     if empty(name)
         return
     endif
-    const path = $'{info.dirpath}/{name}'
+    const path = $'{state.dirpath}/{name}'
     if !empty(glob(path))
         :echoerr $'faild to create file: "{path}" is already exists'
         return
     endif
-    popup_close(info.winid, -1)
+    popup_close(state.winid, -1)
     :execute 'silent edit ' .. path
 enddef
