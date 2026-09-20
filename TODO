@@ -1,7 +1,7 @@
 未対応
 ------
 
-- [ ] DoPrevDir: 1つ以上前のディレクトリに戻れるようにする
+- [.] DoPrevDir: 1つ以上前のディレクトリに戻れるようにする
     - ディレクトリスタックを実装する必要があるかも
 - [ ] `n`: forward search next
 - [ ] `N`: backward search next
@@ -11,18 +11,13 @@
     - [.] delete a directory
         - 再帰的なディレクトリの削除はサポートしない
 - [ ] `d`: create directory
-- [ ] 文字列連結の `.` を `..` にする
 - [ ] 検索時のエスケープ
-- [x] 入力に input() を使用する
-    - [ ] 補完を有効にする？
 - [ ] `gj`: 10j
 - [ ] `gk`: 10k
 - [ ] ignore list(__pycache__/など)
 - [ ] シンボリックリンク対応
-- [ ] new fileでcompletion
 - [ ] popup_create()を使用する
 - [ ] `g:popdir_options`辞書の検討
-- [ ] info.pathをメソッドにする
 - [ ] ファイル・ディレクトリのリネーム
 - [ ] ドットで始まらない名前も隠せるようにする(隠す名前のパターンをリストで持つ?: ['^\.', ...])
 - [ ] テスト
@@ -34,6 +29,12 @@
 対応済み
 --------
 
+- [x] info.pathをメソッドにする
+    - State.Path() として実装
+- [x] new fileでcompletion
+- [x] 入力に input() を使用する
+    - [x] 補完を有効にする？
+- [x] 文字列連結の `.` を `..` にする
 - [x] `p`: back directory
 - [x] `c`: change directory
 - [x] popdir#Open() でオプション引数を受け取る
