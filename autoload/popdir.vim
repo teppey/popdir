@@ -50,6 +50,7 @@ class State
     var isdir: bool
     var key_stack: list<string>
     var show_hidden: bool
+    var pattern: string
 
     def new(this.winid, this.dirpath, this.names, this.show_hidden)
     enddef
@@ -82,6 +83,10 @@ class State
 
     def SetShowHidden(show_hidden: bool): void
         this.show_hidden = show_hidden
+    enddef
+
+    def SetPattern(pattern: string): void
+        this.pattern = pattern
     enddef
 
     def Path(): string
@@ -225,8 +230,9 @@ def Filter(winid: number, key: string): bool
         # ~: Go to home directory
         DoHome(state)
     elseif key == '/'
-        # /: Forward search
         DoForwardSearch(state)
+    elseif key == 'n'
+        DoForwardSearchNext(state)
     elseif key == '?'
         # ?: Backword search
         DoBackwardSearch(state)
@@ -319,8 +325,15 @@ def DoHome(state: State): void
 enddef
 
 def DoForwardSearch(state: State): void
-    const value = input('/')
-    win_execute(state.winid, $":normal! /{value}\<Enter>", 'silent!')
+    const pattern = input('/')
+    state.SetPattern(pattern)
+    win_execute(state.winid, $'vim9 search(''{pattern}'')')
+enddef
+
+def DoForwardSearchNext(state: State): void
+    if !empty(state.pattern)
+        win_execute(state.winid, $'vim9 search(''{state.pattern}'')')
+    endif
 enddef
 
 def DoBackwardSearch(state: State): void
