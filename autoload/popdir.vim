@@ -101,8 +101,26 @@ def Parent(path: string): string
     return fnamemodify(path, ':h')
 enddef
 
-def Sort(names: list<string>): list<string>
-    return sort(names, Compare)
+def Callback(winid: number, result: number): void
+    if result == -1
+        return
+    endif
+    const state = State.Get(winid)
+    execute "silent edit " .. state.Path()
+enddef
+
+def Title(path: string): string
+    const path_tilde = fnamemodify(path, ':~')
+    return $'  {path_tilde}  '
+enddef
+
+def TrimSlash(s: string): string
+    return trim(s, '/', 2)
+enddef
+
+# TODO: symlink
+def Suffix(dirpath: string, name: string): string
+    return (isdirectory($'{dirpath}/{name}')) ? '/' : ''
 enddef
 
 def Compare(a: string, b: string): number
@@ -127,31 +145,9 @@ def Compare(a: string, b: string): number
     endif
 enddef
 
-def Callback(winid: number, result: number): void
-    if result == -1
-        return
-    endif
-    const state = State.Get(winid)
-    execute "silent edit " .. state.Path()
-enddef
-
-def Title(path: string): string
-    const path_tilde = fnamemodify(path, ':~')
-    return $'  {path_tilde}  '
-enddef
-
-def TrimSlash(s: string): string
-    return trim(s, '/', 2)
-enddef
-
-# TODO: symlink
-def Suffix(dirpath: string, name: string): string
-    return (isdirectory($'{dirpath}/{name}')) ? '/' : ''
-enddef
-
 def ListDir(dirpath: string, hidden: bool = false): list<string>
     final names = map(readdir(dirpath), (_, name) => name .. Suffix(dirpath, name))
-    return Sort(filter(names, (_, name) => hidden || name[0] != '.'))
+    return sort(filter(names, (_, name) => hidden || name[0] != '.'), Compare)
 enddef
 
 def Update(winid: number, dirpath: string): void
