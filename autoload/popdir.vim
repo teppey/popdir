@@ -210,9 +210,6 @@ def Filter(winid: number, key: string): bool
         # <C-F>: Page down
         # <C-B>: Page up
         DoCommandAsIs(state, key)
-    elseif key =~ '[gz0-9]'
-        # Push key stack for `gg` and <count> arg
-        add(state.key_stack, key)
     elseif index(COMMAND_SCROLL_CURSOR, key) >= 0 && get(state.key_stack, -1, '') ==# 'z'
         # zz: Cursor line to center of window
         # zt: Cursor line to top of window
@@ -244,6 +241,9 @@ def Filter(winid: number, key: string): bool
         DoChangeDirectory(state)
     elseif key == 'p'
         DoPrevDir(state)
+    elseif key =~ '[gz0-9]'
+        # Push key stack for `gg` and <count> arg
+        add(state.key_stack, key)
     else
         popup_filter_menu(state.winid, key)
     endif
@@ -337,7 +337,7 @@ def DoReload(state: State): void
 enddef
 
 def DoChangeDirectory(state: State): void
-    const dirpath = expand(trim(input('Change Directory: ', '', 'dir')))
+    const dirpath = expand(trim(input('Change directory: ', '', 'dir')))
     if empty(dirpath)
         return
     endif
