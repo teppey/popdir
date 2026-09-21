@@ -41,6 +41,21 @@ export def Open(path: string = ''): void
     State.new(winid, dirpath, names, options.show_hidden).Set()
 enddef
 
+enum Direction
+    Forward(''),
+    Backward('b')
+
+    var search_flag: string
+
+    def Opposite(): Direction
+        if this is Direction.Forward
+            return Direction.Backward
+        else
+            return Direction.Forward
+        endif
+    enddef
+endenum
+
 class State
     var winid: number
     var dirpath: string
@@ -50,7 +65,7 @@ class State
     var isdir: bool
     var key_stack: list<string>
     var show_hidden: bool
-    var pattern: string
+    var search: tuple<string, Direction>
 
     def new(this.winid, this.dirpath, this.names, this.show_hidden)
     enddef
@@ -85,8 +100,8 @@ class State
         this.show_hidden = show_hidden
     enddef
 
-    def SetPattern(pattern: string): void
-        this.pattern = pattern
+    def SetSearch(pattern: string, direction: Direction): void
+        this.search = (pattern, direction)
     enddef
 
     def Path(): string
@@ -230,12 +245,13 @@ def Filter(winid: number, key: string): bool
         # ~: Go to home directory
         DoHome(state)
     elseif key == '/'
-        DoForwardSearch(state)
-    elseif key == 'n'
-        DoForwardSearchNext(state)
+        DoSearchForward(state)
     elseif key == '?'
-        # ?: Backword search
-        DoBackwardSearch(state)
+        DoSearchBackward(state)
+    elseif key == 'n'
+        DoRepeatSearch(state)
+    elseif key == 'N'
+        DoRepeatSearchOpposite(state)
     elseif key == 'r'
         # `r`: リロード
         DoReload(state)
@@ -324,21 +340,36 @@ def DoHome(state: State): void
     Update(state.winid, expand('~'))
 enddef
 
-def DoForwardSearch(state: State): void
+def DoSearchForward(state: State): void
     const pattern = input('/')
-    state.SetPattern(pattern)
-    win_execute(state.winid, $'vim9 search(''{pattern}'')')
-enddef
-
-def DoForwardSearchNext(state: State): void
-    if !empty(state.pattern)
-        win_execute(state.winid, $'vim9 search(''{state.pattern}'')')
+    if !empty(pattern)
+        state.SetSearch(pattern, Direction.Forward)
+        win_execute(state.winid, $'vim9 search(''{pattern}'')')
     endif
 enddef
 
-def DoBackwardSearch(state: State): void
-    const value = input('?')
-    win_execute(state.winid, $":normal! ?{value}\<Enter>", 'silent!')
+def DoSearchBackward(state: State): void
+    const pattern = input('?')
+    if !empty(pattern)
+        state.SetSearch(pattern, Direction.Backward)
+        win_execute(state.winid, $'vim9 search(''{pattern}'', ''b'')')
+    endif
+enddef
+
+def DoRepeatSearch(state: State): void
+    if !empty(state.search)
+        const [pattern, direction] = state.search
+        const flag = direction.search_flag
+        win_execute(state.winid, $'vim9 search(''{pattern}'', ''{flag}'')')
+    endif
+enddef
+
+def DoRepeatSearchOpposite(state: State): void
+    if !empty(state.search)
+        const [pattern, direction] = state.search
+        const flag = direction.Opposite().search_flag
+        win_execute(state.winid, $'vim9 search(''{pattern}'', ''{flag}'')')
+    endif
 enddef
 
 def DoReload(state: State): void
