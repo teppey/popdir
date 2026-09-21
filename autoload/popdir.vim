@@ -238,8 +238,6 @@ def Filter(winid: number, key: string): bool
         # %: Create a new file and edit it
         DoNewFile(state)
     elseif key == 'D'
-        # D: Delete a file
-        # TODO: directory
         DoDelete(state)
     elseif key == '~'
         # ~: Go to home directory
@@ -324,12 +322,28 @@ def DoNewFile(state: State): void
 enddef
 
 def DoDelete(state: State): void
-    const choice = confirm($'Delete file?: {state.name}', "&Yes\n&No", 2)
+    const path = state.Path()
+    const ftype = getftype(path)
+    if empty(ftype)
+        return
+    endif
+
+    var kind = ''
+    var flags = ''
+    if ftype == 'file'
+        kind = 'file'
+    elseif ftype == 'link'
+        kind = 'symlink'
+    elseif ftype == 'dir'
+        kind = 'directory'
+        flags = 'd'
+    endif
+
+    const choice = confirm($'Delete {kind}?: {path}', "&Yes\n&No", 2)
     if choice == 1
-        const path = state.Path()
-        const result = delete(path)
+        const result = delete(path, flags)
         if result != 0
-            echoerr $'Failed to delete file: {path}'
+            echoerr $'Failed to delete {kind}: {path}'
         endif
         Update(state.winid, state.dirpath)
     endif
