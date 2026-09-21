@@ -252,9 +252,8 @@ def Filter(winid: number, key: string): bool
         DoRepeatSearch(state)
     elseif key == 'N'
         DoRepeatSearchOpposite(state)
-    elseif key == 'r'
-        # `r`: リロード
-        DoReload(state)
+    elseif key == "\<C-L>"
+        DoRefresh(state)
     elseif key == 'c'
         DoChangeDirectory(state)
     elseif key == 'p'
@@ -372,7 +371,7 @@ def DoRepeatSearchOpposite(state: State): void
     endif
 enddef
 
-def DoReload(state: State): void
+def DoRefresh(state: State): void
     Update(state.winid, state.dirpath)
 enddef
 
