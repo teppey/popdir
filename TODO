@@ -1,17 +1,13 @@
 未対応
 ------
 
-- [.] `D`: delete a file or a directory
-    - [x] delete a file
-        - Yes/Noプロンプトに削除対象のファイルを表示する
-    - [.] delete a directory
-        - 再帰的なディレクトリの削除はサポートしない
+- [ ] シンボリックリンク対応
 - [ ] `d`: create directory
-- [ ] 検索時のエスケープ
+
 - [ ] `gj`: 10j
 - [ ] `gk`: 10k
+- [ ] 検索時のエスケープ
 - [ ] ignore list(__pycache__/など)
-- [ ] シンボリックリンク対応
 - [ ] popup_create()を使用する
 - [ ] `g:popdir_options`辞書の検討
 - [ ] ファイル・ディレクトリのリネーム
@@ -29,6 +25,12 @@
 対応済み
 --------
 
+- [x] `D`: delete a file or a directory
+    - [x] delete file
+        - Yes/Noプロンプトに削除対象のファイルを表示する
+    - [x] delete directory
+        - 再帰的なディレクトリの削除はサポートしない
+    - [x] delete symlink
 - [x] リロードを`r`から別のキーにする(netrw(C-l)に合わせる？)
 - [x] `N`: repeat search opposite
 - [x] `n`: repeat search
