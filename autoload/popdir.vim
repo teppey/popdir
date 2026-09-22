@@ -138,9 +138,22 @@ def TrimSlash(s: string): string
     return trim(s, '/', 2)
 enddef
 
-# TODO: symlink
 def Suffix(dirpath: string, name: string): string
-    return (isdirectory($'{dirpath}/{name}')) ? '/' : ''
+    const path = $'{dirpath}/{name}'
+    const ftype = getftype(path)
+    if ftype == 'dir'
+        return '/'
+    elseif ftype == 'link'
+        # TODO: chdir()でポップアップウィンドウ自体のカレントディレクトリを保
+        # 持してfnamemodify()で相対パスにする？
+        return $'@ -> {resolve(path)}'
+    elseif ftype == 'socket'
+        return '='
+    elseif ftype == 'fifo'
+        return '|'
+    else
+        return ''
+    endif
 enddef
 
 def Compare(a: string, b: string): number

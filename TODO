@@ -1,7 +1,6 @@
 未対応
 ------
 
-- [ ] シンボリックリンク対応
 - [ ] `d`: create directory
 
 - [ ] `gj`: 10j
@@ -25,6 +24,7 @@
 対応済み
 --------
 
+- [x] シンボリックリンク対応
 - [x] `D`: delete a file or a directory
     - [x] delete file
         - Yes/Noプロンプトに削除対象のファイルを表示する
