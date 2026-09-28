@@ -38,7 +38,8 @@ export def Open(path: string = ''): void
         filter: Filter,
     })
 
-    State.new(winid, dirpath, names, options.show_hidden).Set()
+    const state = State.new(winid, dirpath, names, options.show_hidden)
+    SetState(winid, state)
 enddef
 
 enum Direction
@@ -70,23 +71,6 @@ class State
     def new(this.winid, this.dirpath, this.names, this.show_hidden)
     enddef
 
-    def Set(): void
-        setwinvar(this.winid, 'state', this)
-    enddef
-
-    static def Get(winid: number): State
-        final state = getwinvar(winid, 'state')
-        if !state
-            throw $'failed to get state: winid={winid}'
-        endif
-
-        win_execute(winid, 'vim9cmd w:name = getline(".")')
-        const name = getwinvar(winid, 'name')
-        state.name = TrimSlash(name)
-        state.isdir = name[-1 :] == '/'
-        return state
-    enddef
-
     def SetDirPath(dirpath: string): void
         this.prev_dirpath = this.dirpath
         this.dirpath = dirpath
@@ -94,6 +78,14 @@ class State
 
     def SetNames(names: list<string>): void
         this.names = names
+    enddef
+
+    def SetName(name: string): void
+        this.name = name
+    enddef
+
+    def SetIsDir(isdir: bool): void
+        this.isdir = isdir
     enddef
 
     def SetShowHidden(show_hidden: bool): void
@@ -117,6 +109,23 @@ class State
     enddef
 endclass
 
+def SetState(winid: number, state: State): void
+    setwinvar(winid, 'state', state)
+enddef
+
+def GetState(winid: number): State
+    final state = getwinvar(winid, 'state')
+    if !state
+        throw $'failed to get state: winid={winid}'
+    endif
+
+    win_execute(winid, 'vim9cmd w:name = getline(".")')
+    const name = getwinvar(winid, 'name')
+    state.SetName(TrimSlash(name))
+    state.SetIsDir(name[-1 :] == '/')
+    return state
+enddef
+
 def Parent(path: string): string
     return fnamemodify(path, ':h')
 enddef
@@ -125,7 +134,7 @@ def Callback(winid: number, result: number): void
     if result == -1
         return
     endif
-    const state = State.Get(winid)
+    const state = GetState(winid)
     execute "silent edit " .. state.Path()
 enddef
 
@@ -185,11 +194,11 @@ enddef
 
 def Update(winid: number, dirpath: string): void
     const trimmed = TrimSlash(dirpath)
-    const state = State.Get(winid)
+    const state = GetState(winid)
     const names = ListDir(trimmed, state.show_hidden)
     state.SetDirPath(trimmed)
     state.SetNames(names)
-    state.Set()
+    SetState(winid, state)
 
     popup_settext(winid, names)
     popup_setoptions(winid, { title: Title(trimmed) })
@@ -203,7 +212,7 @@ def Filter(winid: number, key: string): bool
         return true
     endif
 
-    const state = State.Get(winid)
+    const state = GetState(winid)
 
     if key == "\<Enter>" && state.isdir
         # サブディレクトリを表示
