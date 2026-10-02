@@ -9,6 +9,8 @@ const POPDIR_DEFAULT_OPTIONS = {
     show_hidden: true,
 }
 
+var STATE_MAP: dict<any> = {}
+
 export def Open(path: string = ''): void
     var dirpath = path
     if empty(dirpath)
@@ -110,13 +112,17 @@ class State
 endclass
 
 def SetState(winid: number, state: State): void
-    setwinvar(winid, 'state', state)
+    # setwinvar(winid, 'state', state)
+    STATE_MAP[winid] = state
+    echo keys(STATE_MAP)
 enddef
 
 def GetState(winid: number): State
-    final state = getwinvar(winid, 'state')
-    if !state
-        throw $'failed to get state: winid={winid}'
+    # final state = getwinvar(winid, 'state')
+    final state = get(STATE_MAP, winid)
+    # if !state
+    if state == null
+        throw $'failed to get state: state={typename(state)}, winid={winid}, map={STATE_MAP}'
     endif
 
     win_execute(winid, 'vim9cmd w:name = getline(".")')
@@ -131,11 +137,11 @@ def Parent(path: string): string
 enddef
 
 def Callback(winid: number, result: number): void
-    if result == -1
-        return
-    endif
     const state = GetState(winid)
-    execute "silent edit " .. state.Path()
+    remove(STATE_MAP, winid)
+    if result != -1
+        execute "silent edit " .. state.Path()
+    endif
 enddef
 
 def Title(path: string): string
