@@ -104,6 +104,10 @@ class State
         this.key_stack = []
     enddef
 
+    def PeekKeyStack(): string
+        return get(this.key_stack, -1, '')
+    enddef
+
     def NumArg(): number
         return str2nr(join(this.key_stack, ''))
     enddef
@@ -225,6 +229,9 @@ def Filter(winid: number, key: string): bool
         # gg: Move to first line
         DoFirstLine(state)
         state.ClearKeyStack()
+    elseif key == 'j' && state.PeekKeyStack() == 'g'
+        # gj: 10 lines downward
+        DoDownload10Lines(state)
     elseif key == "\<End>"
         # <End>: Move to last line
         DoLastLine(state)
@@ -305,6 +312,13 @@ def DoFirstLine(state: State): void
     win_execute(state.winid, 'vim9 cursor(1, 1)')
 enddef
 
+def DoDownload10Lines(state: State): void
+    const count = state.NumArg() ?? 1
+    const lnum = line('.', state.winid) + (10 * count)
+    win_execute(state.winid, $'vim9 cursor({lnum}, 1)')
+    state.ClearKeyStack()
+enddef
+
 def DoLastLine(state: State): void
     win_execute(state.winid, 'vim9 cursor("$", 1)')
 enddef
@@ -314,7 +328,7 @@ def DoLine(state: State, lnum: number): void
 enddef
 
 def DoCommandAsIs(state: State, key: string): void
-    var count = state.NumArg() ?? 1
+    const count = state.NumArg() ?? 1
     win_execute(state.winid, $':normal! {count}{key}')
     state.ClearKeyStack()
 enddef

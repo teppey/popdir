@@ -1,8 +1,9 @@
 未対応
 ------
 
-- [ ] `gj`: 10j
+- [x] `gj`: 10j
 - [ ] `gk`: 10k
+- [ ] Filter()の末尾でkeep_stackがfalseならstate.key_stackをクリアする
 - [ ] 検索時のエスケープ
 - [ ] ignore list(__pycache__/など)
 - [ ] popup_create()を使用する
