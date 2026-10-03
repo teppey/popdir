@@ -114,8 +114,8 @@ def SetState(winid: number, state: State): void
 enddef
 
 def GetState(winid: number): State
-    final state = getwinvar(winid, 'state')
-    if !state
+    final state = getwinvar(winid, 'state', null)
+    if state == null
         throw $'failed to get state: winid={winid}'
     endif
 
