@@ -153,8 +153,6 @@ def Suffix(dirpath: string, name: string): string
     if ftype == 'dir'
         return '/'
     elseif ftype == 'link'
-        # TODO: chdir()でポップアップウィンドウ自体のカレントディレクトリを保
-        # 持してfnamemodify()で相対パスにする？
         return $'@ -> {resolve(path)}'
     elseif ftype == 'socket'
         return '='
@@ -278,6 +276,8 @@ def Filter(winid: number, key: string): bool
         DoChangeDirectory(state)
     elseif key == 'p'
         DoPrevDir(state)
+    elseif key == 'd'
+        DoNewDir(state)
     elseif key =~ '[gz0-9]'
         # Push key stack for `gg` and <count> arg
         add(state.key_stack, key)
@@ -427,4 +427,26 @@ def DoPrevDir(state: State): void
     if !empty(state.prev_dirpath)
         Update(state.winid, state.prev_dirpath)
     endif
+enddef
+
+def DoNewDir(state: State): void
+    const name = trim(input('New directory: '))
+    if empty(name)
+        return
+    endif
+
+    const path = $'{state.dirpath}/{name}'
+    if !empty(glob(path))
+        :echoerr $'faild to create directory: "{path}" is already exists'
+        return
+    endif
+
+    const success = mkdir(path)
+    if !success
+        :echoerr $'faild to create directory: "{path}"'
+        return
+    endif
+
+    Update(state.winid, state.dirpath)
+    win_execute(state.winid, $'vim9 search(''{name}'')')
 enddef
