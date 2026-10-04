@@ -231,7 +231,10 @@ def Filter(winid: number, key: string): bool
         state.ClearKeyStack()
     elseif key == 'j' && state.PeekKeyStack() == 'g'
         # gj: 10 lines downward
-        DoDownload10Lines(state)
+        DoManyLines(state, 10, Direction.Forward)
+    elseif key == 'k' && state.PeekKeyStack() == 'g'
+        # gk: 10 lines upward
+        DoManyLines(state, 10, Direction.Backward)
     elseif key == "\<End>"
         # <End>: Move to last line
         DoLastLine(state)
@@ -312,9 +315,11 @@ def DoFirstLine(state: State): void
     win_execute(state.winid, 'vim9 cursor(1, 1)')
 enddef
 
-def DoDownload10Lines(state: State): void
+def DoManyLines(state: State, n: number, direction: Direction): void
     const count = state.NumArg() ?? 1
-    const lnum = line('.', state.winid) + (10 * count)
+    const updown = (direction is Direction.Forward) ? 1 : -1
+    const cur = line('.', state.winid)
+    const lnum = max([1, cur + (n * count * updown)])
     win_execute(state.winid, $'vim9 cursor({lnum}, 1)')
     state.ClearKeyStack()
 enddef
