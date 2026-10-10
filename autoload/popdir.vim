@@ -204,6 +204,7 @@ def Update(winid: number, dirpath: string): void
 
     popup_settext(winid, names)
     popup_setoptions(winid, { title: Title(trimmed) })
+    win_execute(winid, 'vim9 cursor(1, 1)')
 enddef
 
 const COMMAND_AS_IS = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
@@ -306,12 +307,16 @@ def DoSubDir(state: State): void
     win_execute(state.winid, 'vim9 cursor(1, 1)')
 enddef
 
+def RegexpEscape(s: string): string
+    return substitute(s, '[\-\^\\.*$]', '\\&', 'g')
+enddef
+
 def DoParentDir(state: State): void
     const prev_name = fnamemodify(state.dirpath, ':t')
+    const escaped = RegexpEscape(prev_name)
     const parent = Parent(state.dirpath)
     Update(state.winid, parent)
-    # TODO: escape
-    win_execute(state.winid, $":normal! /{prev_name}\<Enter>")
+    win_execute(state.winid, $'vim9 search(''\C^{escaped}/'')')
 enddef
 
 def DoFirstLine(state: State): void
