@@ -6,7 +6,7 @@ vim9script
 # Version: 0.1
 
 const POPDIR_DEFAULT_OPTIONS = {
-    show_hidden: true,
+    show_hidden: false,
 }
 
 export def Open(path: string = ''): void
