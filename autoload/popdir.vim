@@ -215,6 +215,7 @@ def Filter(winid: number, key: string): bool
     endif
 
     const state = GetState(winid)
+    var keep_key_stack = false
 
     if key == "\<Enter>" && state.isdir
         # サブディレクトリを表示
@@ -228,7 +229,6 @@ def Filter(winid: number, key: string): bool
     elseif key == 'g' && state.key_stack[: -1] == ['g']
         # gg: Move to first line
         DoFirstLine(state)
-        state.ClearKeyStack()
     elseif key == 'j' && state.PeekKeyStack() == 'g'
         # gj: 10 lines downward
         DoManyLines(state, 10, Direction.Forward)
@@ -246,7 +246,6 @@ def Filter(winid: number, key: string): bool
         else
             DoLastLine(state)
         endif
-        state.ClearKeyStack()
     elseif index(COMMAND_AS_IS, key) >= 0
         # j: <count> lines downward
         # k: <count lines upward
@@ -289,10 +288,14 @@ def Filter(winid: number, key: string): bool
     elseif key == 'd'
         DoNewDir(state)
     elseif key =~ '[gz0-9]'
-        # Push key stack for `gg` and <count> arg
         add(state.key_stack, key)
+        keep_key_stack = true
     else
         popup_filter_menu(state.winid, key)
+    endif
+
+    if !keep_key_stack
+        state.ClearKeyStack()
     endif
 
     return true
@@ -321,7 +324,6 @@ def DoManyLines(state: State, n: number, direction: Direction): void
     const cur = line('.', state.winid)
     const lnum = max([1, cur + (n * count * updown)])
     win_execute(state.winid, $'vim9 cursor({lnum}, 1)')
-    state.ClearKeyStack()
 enddef
 
 def DoLastLine(state: State): void
@@ -335,12 +337,10 @@ enddef
 def DoCommandAsIs(state: State, key: string): void
     const count = state.NumArg() ?? 1
     win_execute(state.winid, $':normal! {count}{key}')
-    state.ClearKeyStack()
 enddef
 
 def DoCursorRelativeScroll(state: State, key: string): void
     win_execute(state.winid, $':normal! z{key}')
-    state.ClearKeyStack()
 enddef
 
 def DoToggleHidden(state: State): void
