@@ -218,7 +218,7 @@ def Filter(winid: number, key: string): bool
     const state = GetState(winid)
     var keep_key_stack = false
 
-    if key == "\<Enter>" && state.isdir
+    if (key == "\<Enter>" || key == "\<Space>") && state.isdir
         # サブディレクトリを表示
         DoSubDir(state)
     elseif key == '-'
@@ -288,6 +288,8 @@ def Filter(winid: number, key: string): bool
         DoPrevDir(state)
     elseif key == 'd'
         DoNewDir(state)
+    elseif key == 'R'
+        DoRename(state)
     elseif key =~ '[gz0-9]'
         add(state.key_stack, key)
         keep_key_stack = true
@@ -473,4 +475,22 @@ def DoNewDir(state: State): void
 
     Update(state.winid, state.dirpath)
     win_execute(state.winid, $'vim9 search(''{name}'')')
+enddef
+
+def DoRename(state: State): void
+    const from = state.Path()
+    const kind = isdirectory(from) ? 'directory' : 'file'
+    const to = trim(input($'Rename {kind}: {from} -> ', from))
+    const result = rename(from, to)
+    if result != 0
+        echoerr $'Failed to rename {kind}: {from} -> {to}'
+    else
+        echo ''
+    endif
+
+    Update(state.winid, state.dirpath)
+    const name = fnamemodify(to, ':t')
+    const suffix = Suffix(state.dirpath, name)
+    const escaped = RegexpEscape(name)
+    win_execute(state.winid, $'vim9 search(''\C^{escaped}{suffix}'')')
 enddef
