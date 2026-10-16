@@ -290,6 +290,8 @@ def Filter(winid: number, key: string): bool
         DoNewDir(state)
     elseif key == 'R'
         DoRename(state)
+    elseif key == 'C'
+        DoCopyFile(state)
     elseif key =~ '[gz0-9]'
         add(state.key_stack, key)
         keep_key_stack = true
@@ -301,6 +303,7 @@ def Filter(winid: number, key: string): bool
         state.ClearKeyStack()
     endif
 
+    echo ''
     return true
 enddef
 
@@ -443,7 +446,7 @@ def DoChangeDirectory(state: State): void
         return
     endif
     if !isdirectory(dirpath)
-        :echoerr $'no such directory: {dirpath}'
+        echoerr $'no such directory: {dirpath}'
         return
     endif
     Update(state.winid, dirpath)
@@ -463,13 +466,13 @@ def DoNewDir(state: State): void
 
     const path = $'{state.dirpath}/{name}'
     if !empty(glob(path))
-        :echoerr $'faild to create directory: "{path}" is already exists'
+        echoerr $'faild to create directory: "{path}" is already exists'
         return
     endif
 
     const success = mkdir(path)
     if !success
-        :echoerr $'faild to create directory: "{path}"'
+        echoerr $'faild to create directory: "{path}"'
         return
     endif
 
@@ -481,11 +484,38 @@ def DoRename(state: State): void
     const from = state.Path()
     const kind = isdirectory(from) ? 'directory' : 'file'
     const to = trim(input($'Rename {kind}: {from} -> ', from))
+    if empty(to)
+        return
+    endif
+
     const result = rename(from, to)
     if result != 0
         echoerr $'Failed to rename {kind}: {from} -> {to}'
-    else
-        echo ''
+        return
+    endif
+
+    Update(state.winid, state.dirpath)
+    const name = fnamemodify(to, ':t')
+    const suffix = Suffix(state.dirpath, name)
+    const escaped = RegexpEscape(name)
+    win_execute(state.winid, $'vim9 search(''\C^{escaped}{suffix}'')')
+enddef
+
+def DoCopyFile(state: State): void
+    const from = state.Path()
+    if isdirectory(from)
+        return
+    endif
+
+    const to = trim(input($'Copy file: {from} -> ', from))
+    if empty(to)
+        return
+    endif
+
+    const success = filecopy(from, to)
+    if !success
+        echoerr $'Failed to copy file: {from} -> {to}'
+        return
     endif
 
     Update(state.winid, state.dirpath)
