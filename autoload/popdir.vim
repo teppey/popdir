@@ -138,6 +138,7 @@ def Callback(winid: number, result: number): void
     if result == -1
         return
     endif
+
     const state = GetState(winid)
     execute "silent edit " .. state.Path()
 enddef
@@ -292,6 +293,8 @@ def Filter(winid: number, key: string): bool
         DoRename(state)
     elseif key == 'C'
         DoCopyFile(state)
+    elseif key == 'r'
+        DoViewFile(state)
     elseif key =~ '[gz0-9]'
         add(state.key_stack, key)
         keep_key_stack = true
@@ -481,8 +484,8 @@ def DoNewDir(state: State): void
 enddef
 
 def DoRename(state: State): void
+    const kind = state.isdir ? 'directory' : 'file'
     const from = state.Path()
-    const kind = isdirectory(from) ? 'directory' : 'file'
     const to = trim(input($'Rename {kind}: {from} -> ', from))
     if empty(to)
         return
@@ -502,11 +505,11 @@ def DoRename(state: State): void
 enddef
 
 def DoCopyFile(state: State): void
-    const from = state.Path()
-    if isdirectory(from)
+    if state.isdir
         return
     endif
 
+    const from = state.Path()
     const to = trim(input($'Copy file: {from} -> ', from))
     if empty(to)
         return
@@ -523,4 +526,14 @@ def DoCopyFile(state: State): void
     const suffix = Suffix(state.dirpath, name)
     const escaped = RegexpEscape(name)
     win_execute(state.winid, $'vim9 search(''\C^{escaped}{suffix}'')')
+enddef
+
+def DoViewFile(state: State): void
+    if state.isdir
+        return
+    endif
+
+    const path = state.Path()
+    popup_close(state.winid, -1)
+    execute $'silent view {path}'
 enddef
