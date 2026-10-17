@@ -135,6 +135,8 @@ def Parent(path: string): string
 enddef
 
 def Callback(winid: number, result: number): void
+    ClearCommandLine()
+
     if result == -1
         return
     endif
@@ -208,6 +210,10 @@ def Update(winid: number, dirpath: string): void
     win_execute(winid, 'vim9 cursor(1, 1)')
 enddef
 
+def ClearCommandLine(): void
+    echo ''
+enddef
+
 const COMMAND_AS_IS = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
 const COMMAND_SCROLL_CURSOR = ['z', 't', 'b']
 
@@ -215,6 +221,8 @@ def Filter(winid: number, key: string): bool
     if strtrans(key) == '<80><fd>`'
         return true
     endif
+
+    ClearCommandLine()
 
     const state = GetState(winid)
     var keep_key_stack = false
@@ -306,8 +314,13 @@ def Filter(winid: number, key: string): bool
         state.ClearKeyStack()
     endif
 
-    echo ''
     return true
+enddef
+
+def ShowError(message: string): void
+    echohl ErrorMsg
+    echo message
+    echohl None
 enddef
 
 def DoSubDir(state: State): void
@@ -368,7 +381,7 @@ def DoNewFile(state: State): void
     endif
     const path = $'{state.dirpath}/{name}'
     if !empty(glob(path))
-        :echoerr $'faild to create file: "{path}" is already exists'
+        ShowError($'Faild to create file: "{path}" is already exists')
         return
     endif
     popup_close(state.winid, -1)
@@ -397,7 +410,7 @@ def DoDelete(state: State): void
     if choice == 1
         const result = delete(path, flags)
         if result != 0
-            echoerr $'Failed to delete {kind}: {path}'
+            ShowError($'Failed to delete {kind}: {path}')
         endif
         Update(state.winid, state.dirpath)
     endif
@@ -449,7 +462,7 @@ def DoChangeDirectory(state: State): void
         return
     endif
     if !isdirectory(dirpath)
-        echoerr $'no such directory: {dirpath}'
+        ShowError($'No such directory: {dirpath}')
         return
     endif
     Update(state.winid, dirpath)
@@ -469,13 +482,13 @@ def DoNewDir(state: State): void
 
     const path = $'{state.dirpath}/{name}'
     if !empty(glob(path))
-        echoerr $'faild to create directory: "{path}" is already exists'
+        ShowError($'Faild to create directory: "{path}" is already exists')
         return
     endif
 
     const success = mkdir(path)
     if !success
-        echoerr $'faild to create directory: "{path}"'
+        ShowError($'Faild to create directory: "{path}"')
         return
     endif
 
@@ -493,7 +506,7 @@ def DoRename(state: State): void
 
     const result = rename(from, to)
     if result != 0
-        echoerr $'Failed to rename {kind}: {from} -> {to}'
+        ShowError($'Failed to rename {kind}: {from} -> {to}')
         return
     endif
 
@@ -517,7 +530,7 @@ def DoCopyFile(state: State): void
 
     const success = filecopy(from, to)
     if !success
-        echoerr $'Failed to copy file: {from} -> {to}'
+        ShowError($'Failed to copy file: {from} -> {to}')
         return
     endif
 
