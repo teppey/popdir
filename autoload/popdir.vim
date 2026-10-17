@@ -142,7 +142,7 @@ def Callback(winid: number, result: number): void
     endif
 
     const state = GetState(winid)
-    execute "silent edit " .. state.Path()
+    SafeEdit(state.Path())
 enddef
 
 def Title(path: string): string
@@ -332,6 +332,22 @@ def RegexpEscape(s: string): string
     return substitute(s, '[\-\^\\.*$]', '\\&', 'g')
 enddef
 
+# Ref: https://thinca.hatenablog.com/entry/20090312/1236792602
+# :help `=
+def SafePath(path: string): string
+    return $'`=''{path}''`'
+enddef
+
+def SafeEdit(path: string): void
+    const safe = SafePath(path)
+    execute $'silent edit {safe}'
+enddef
+
+def SafeView(path: string): void
+    const safe = SafePath(path)
+    execute $'silent view {safe}'
+enddef
+
 def DoParentDir(state: State): void
     const prev_name = fnamemodify(state.dirpath, ':t')
     const escaped = RegexpEscape(prev_name)
@@ -385,7 +401,7 @@ def DoNewFile(state: State): void
         return
     endif
     popup_close(state.winid, -1)
-    :execute 'silent edit ' .. path
+    SafeEdit(path)
 enddef
 
 def DoDelete(state: State): void
@@ -548,5 +564,5 @@ def DoViewFile(state: State): void
 
     const path = state.Path()
     popup_close(state.winid, -1)
-    execute $'silent view {path}'
+    SafeView(path)
 enddef
