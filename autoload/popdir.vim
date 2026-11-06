@@ -396,49 +396,23 @@ def Filter(winid: number, key: string): bool
 
     if key == "\<Enter>" || key == "\<Space>"
         DoOpen(state2)
-#    if (key == "\<Enter>" || key == "\<Space>") && state.isdir
-#        # サブディレクトリを表示
-#        DoSubDir(state)
     elseif key == '-'
-        # 一つ上のディレクトリに移動
-        # DoParentDir(state)
          DoParentDir2(state2)
     elseif key == "\<Home>"
         # <Home>: Move to first line
-        # DoFirstLine(state)
         DoFirstLine2(state2)
-#    elseif key == 'g' && state.key_stack[: -1] == ['g']
-#        # gg: Move to first line
-#        DoFirstLine(state)
     elseif key == 'g' && state2.PeekKeyStack() == 'g'
         # gg: Move to first line
         DoFirstLine2(state2)
-#    elseif key == 'j' && state.PeekKeyStack() == 'g'
-#        # gj: 10 lines downward
-#        DoManyLines(state, 10, Direction.Forward)
     elseif key == 'j' && state2.PeekKeyStack() == 'g'
         # gj: 10 lines downward
         DoManyLines2(state2, 10, Direction.Forward)
-#    elseif key == 'k' && state.PeekKeyStack() == 'g'
-#        # gk: 10 lines upward
-#        DoManyLines(state, 10, Direction.Backward)
     elseif key == 'k' && state2.PeekKeyStack() == 'g'
         # gk: 10 lines upward
         DoManyLines2(state2, 10, Direction.Backward)
-#    elseif key == "\<End>"
-#        # <End>: Move to last line
-#        DoLastLine(state)
     elseif key == "\<End>"
         # <End>: Move to last line
         DoLastLine2(state2)
-#    elseif key == 'G'
-#        # G: Move to last line if no <count>, or move to <count> line
-#        const num_arg = state.NumArg()
-#        if num_arg > 0
-#            DoLine(state, num_arg)
-#        else
-#            DoLastLine(state)
-#        endif
     elseif key == 'G'
         # G: Move to last line if no <count>, or move to <count> line
         const num_arg = state2.NumArg()
@@ -447,15 +421,6 @@ def Filter(winid: number, key: string): bool
         else
             DoLastLine2(state2)
         endif
-#    elseif index(COMMAND_AS_IS, key) >= 0
-#        # j: <count> lines downward
-#        # k: <count lines upward
-#        # H: Line <count> from top of window
-#        # M: Middle line of window
-#        # L: Line <count> from bottom of window
-#        # <C-F>: Page down
-#        # <C-B>: Page up
-#        DoCommandAsIs(state, key)
     elseif index(COMMAND_AS_IS, key) >= 0
         # j: <count> lines downward
         # k: <count lines upward
@@ -465,80 +430,42 @@ def Filter(winid: number, key: string): bool
         # <C-F>: Page down
         # <C-B>: Page up
         DoCommandAsIs2(state2, key)
-#    elseif index(COMMAND_SCROLL_CURSOR, key) >= 0 && get(state.key_stack, -1, '') ==# 'z'
-#        # zz: Cursor line to center of window
-#        # zt: Cursor line to top of window
-#        # zb: Cursor line to bottom of window
-#        DoCursorRelativeScroll(state, key)
     elseif index(COMMAND_SCROLL_CURSOR, key) >= 0 && state2.PeekKeyStack() ==# 'z'
         # zz: Cursor line to center of window
         # zt: Cursor line to top of window
         # zb: Cursor line to bottom of window
         DoCursorRelativeScroll2(state2, key)
-#    elseif key == 'h'
-#        # h: Toggle display hidden files
-#        DoToggleHidden(state)
     elseif key == 'h'
         # h: Toggle display hidden files
         DoToggleHidden2(state2)
-#    elseif key == '%'
-#        # %: Create a new file and edit it
-#        DoNewFile(state)
     elseif key == '%'
         # %: Create a new file and edit it
         DoNewFile2(state2)
-#    elseif key == 'D'
-#        DoDelete(state)
     elseif key == 'D'
         DoDelete2(state2)
-#    elseif key == '~'
-#        # ~: Go to home directory
-#        DoHome(state)
     elseif key == '~'
         # ~: Go to home directory
         DoHome2(state2)
-#    elseif key == '/'
-#        DoSearchForward(state)
     elseif key == '/'
         DoSearchForward2(state2)
-#    elseif key == '?'
-#        DoSearchBackward(state)
     elseif key == '?'
         DoSearchBackward2(state2)
-#    elseif key == 'n'
-#        DoRepeatSearch(state)
     elseif key == 'n'
         DoRepeatSearch2(state2)
-#    elseif key == 'N'
-#        DoRepeatSearchOpposite(state)
     elseif key == 'N'
         DoRepeatSearchOpposite2(state2)
-#    elseif key == "\<C-L>"
-#        DoRefresh(state)
     elseif key == "\<C-L>"
         DoRefresh2(state2)
-#    elseif key == 'c'
-#        DoChangeDirectory(state)
     elseif key == 'c'
         DoChangeDirectory2(state2)
-#    elseif key == 'p'
-#        DoPrevDir(state)
     elseif key == 'p'
         DoPrevDir2(state2)
-#    elseif key == 'd'
-#        DoNewDir(state)
     elseif key == 'd'
         DoNewDir2(state2)
-#    elseif key == 'R'
-#        DoRename(state)
     elseif key == 'R'
         DoRename2(state2)
-#    elseif key == 'C'
-#        DoCopyFile(state)
     elseif key == 'C'
         DoCopyFile2(state2)
-#    elseif key == 'r'
-#        DoViewFile(state)
     elseif key == 'r'
         DoView(state2)
     elseif key =~ '[gz0-9]'
