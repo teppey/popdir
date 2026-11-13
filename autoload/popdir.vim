@@ -44,7 +44,7 @@ export def Open(path: string = ''): void
         filter: Filter,
     })
 
-    const state2 = State2.new(winid, dirpath, finfos, options.show_hidden)
+    const state2 = State.new(winid, dirpath, finfos, options.show_hidden)
     SetState2(winid, state2)
 enddef
 
@@ -91,7 +91,7 @@ class FileInfo
     enddef
 endclass
 
-class State2
+class State
     var winid: number
     var dirpath: string
     var prev_dirpath: string
@@ -146,11 +146,11 @@ class State2
     enddef
 endclass
 
-def SetState2(winid: number, state2: State2): void
+def SetState2(winid: number, state2: State): void
     setwinvar(winid, 'state2', state2)
 enddef
 
-def GetState2(winid: number): State2
+def GetState2(winid: number): State
     final state2 = getwinvar(winid, 'state2', null)
     if state2 == null
         throw $'failed to get state2: winid={winid}'
@@ -391,7 +391,7 @@ def ShowError(message: string): void
     echohl None
 enddef
 
-def DoOpen(state2: State2): void
+def DoOpen(state2: State): void
     if !state2.HasCurrent()
         return
     endif
@@ -433,17 +433,17 @@ def SafeView(path: string): void
     execute $'silent view {safe}'
 enddef
 
-def DoParentDir2(state2: State2): void
+def DoParentDir2(state2: State): void
     const name = fnamemodify(state2.dirpath, ':t')
     Update2(state2.winid, Parent(state2.dirpath))
     FindAndMove(state2, name)
 enddef
 
-def DoFirstLine2(state2: State2): void
+def DoFirstLine2(state2: State): void
     win_execute(state2.winid, 'vim9 cursor(1, 1)')
 enddef
 
-def DoManyLines2(state2: State2, n: number, direction: Direction): void
+def DoManyLines2(state2: State, n: number, direction: Direction): void
     const count = state2.NumArg() ?? 1
     const updown = (direction is Direction.Forward) ? 1 : -1
     const cur = line('.', state2.winid)
@@ -451,30 +451,30 @@ def DoManyLines2(state2: State2, n: number, direction: Direction): void
     win_execute(state2.winid, $'vim9 cursor({lnum}, 1)')
 enddef
 
-def DoLastLine2(state2: State2): void
+def DoLastLine2(state2: State): void
     win_execute(state2.winid, 'vim9 cursor("$", 1)')
 enddef
 
-def DoLine2(state2: State2, lnum: number): void
+def DoLine2(state2: State, lnum: number): void
     win_execute(state2.winid, $'vim9 cursor({lnum}, 1)')
 enddef
 
 # TODO: j, kにcursor()を使うとパフォーマンスが改善されるか確認
-def DoCommandAsIs2(state2: State2, key: string): void
+def DoCommandAsIs2(state2: State, key: string): void
     const count = state2.NumArg() ?? 1
     win_execute(state2.winid, $':normal! {count}{key}')
 enddef
 
-def DoCursorRelativeScroll2(state2: State2, key: string): void
+def DoCursorRelativeScroll2(state2: State, key: string): void
     win_execute(state2.winid, $':normal! z{key}')
 enddef
 
-def DoToggleHidden2(state2: State2): void
+def DoToggleHidden2(state2: State): void
     state2.SetShowHidden(!state2.show_hidden)
     Update2(state2.winid, state2.dirpath)
 enddef
 
-def DoNewFile2(state2: State2): void
+def DoNewFile2(state2: State): void
     const name = trim(input('New file: '))
     if empty(name)
         return
@@ -488,7 +488,7 @@ def DoNewFile2(state2: State2): void
     SafeEdit(path)
 enddef
 
-def DoDelete2(state2: State2): void
+def DoDelete2(state2: State): void
     if !state2.HasCurrent()
         return
     endif
@@ -517,11 +517,11 @@ def DoDelete2(state2: State2): void
     endif
 enddef
 
-def DoHome2(state2: State2): void
+def DoHome2(state2: State): void
     Update2(state2.winid, expand('~'))
 enddef
 
-def DoSearchForward2(state2: State2): void
+def DoSearchForward2(state2: State): void
     const pattern = input('/')
     if !empty(pattern)
         state2.SetSearch(pattern, Direction.Forward)
@@ -531,7 +531,7 @@ def DoSearchForward2(state2: State2): void
     endif
 enddef
 
-def DoSearchBackward2(state2: State2): void
+def DoSearchBackward2(state2: State): void
     const pattern = input('?')
     if !empty(pattern)
         state2.SetSearch(pattern, Direction.Backward)
@@ -541,7 +541,7 @@ def DoSearchBackward2(state2: State2): void
     endif
 enddef
 
-def DoRepeatSearch2(state2: State2): void
+def DoRepeatSearch2(state2: State): void
     if !empty(state2.search)
         const [pattern, direction] = state2.search
         const flag = direction.search_flag
@@ -551,7 +551,7 @@ def DoRepeatSearch2(state2: State2): void
     endif
 enddef
 
-def DoRepeatSearchOpposite2(state2: State2): void
+def DoRepeatSearchOpposite2(state2: State): void
     if !empty(state2.search)
         const [pattern, direction] = state2.search
         const flag = direction.Opposite().search_flag
@@ -561,11 +561,11 @@ def DoRepeatSearchOpposite2(state2: State2): void
     endif
 enddef
 
-def DoRefresh2(state2: State2): void
+def DoRefresh2(state2: State): void
     Update2(state2.winid, state2.dirpath)
 enddef
 
-def DoChangeDirectory2(state2: State2): void
+def DoChangeDirectory2(state2: State): void
     const dirpath = expand(trim(input('Change directory: ', '', 'dir')))
     if empty(dirpath)
         return
@@ -577,7 +577,7 @@ def DoChangeDirectory2(state2: State2): void
     Update2(state2.winid, dirpath)
 enddef
 
-def DoPrevDir2(state2: State2): void
+def DoPrevDir2(state2: State): void
     const prev_dirpath = state2.prev_dirpath
     if empty(prev_dirpath)
         return
@@ -589,7 +589,7 @@ def DoPrevDir2(state2: State2): void
     Update2(state2.winid, prev_dirpath)
 enddef
 
-def DoNewDir2(state2: State2): void
+def DoNewDir2(state2: State): void
     const name = trim(input('New directory: '))
     if empty(name)
         return
@@ -611,7 +611,7 @@ def DoNewDir2(state2: State2): void
     FindAndMove(state2, name)
 enddef
 
-def DoRename2(state2: State2): void
+def DoRename2(state2: State): void
     if !state2.HasCurrent()
         return
     endif
@@ -647,7 +647,7 @@ def DoRename2(state2: State2): void
     endif
 enddef
 
-def DoCopyFile2(state2: State2): void
+def DoCopyFile2(state2: State): void
     if !state2.HasCurrent()
         return
     endif
@@ -678,7 +678,7 @@ def DoCopyFile2(state2: State2): void
     endif
 enddef
 
-def FindAndMove(state2: State2, name: string)
+def FindAndMove(state2: State, name: string)
     const index = indexof(state2.file_infos,  (i, finfo) => finfo.name == name)
     if index != -1
         win_execute(state2.winid, $'vim9 cursor({index + 1}, 1)')
@@ -686,7 +686,7 @@ def FindAndMove(state2: State2, name: string)
     endif
 enddef
 
-def DoView(state2: State2): void
+def DoView(state2: State): void
     if !state2.HasCurrent()
         return
     endif
