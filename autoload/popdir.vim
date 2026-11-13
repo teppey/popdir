@@ -44,8 +44,8 @@ export def Open(path: string = ''): void
         filter: Filter,
     })
 
-    const state2 = State.new(winid, dirpath, finfos, options.show_hidden)
-    SetState2(winid, state2)
+    const state = State.new(winid, dirpath, finfos, options.show_hidden)
+    SetState2(winid, state)
 enddef
 
 enum Direction
@@ -146,14 +146,14 @@ class State
     enddef
 endclass
 
-def SetState2(winid: number, state2: State): void
-    setwinvar(winid, 'state2', state2)
+def SetState2(winid: number, state: State): void
+    setwinvar(winid, 'state', state)
 enddef
 
 def GetState2(winid: number): State
-    final state2 = getwinvar(winid, 'state2', null)
-    if state2 == null
-        throw $'failed to get state2: winid={winid}'
+    final state = getwinvar(winid, 'state', null)
+    if state == null
+        throw $'failed to get state: winid={winid}'
     endif
 
     const lnum = line('.', winid)
@@ -161,13 +161,13 @@ def GetState2(winid: number): State
         throw $'failed to get line number from the popup: winid={winid}'
     endif
 
-    if len(state2.file_infos) > 0
-        state2.SetCurrent(lnum - 1)
+    if len(state.file_infos) > 0
+        state.SetCurrent(lnum - 1)
     else
-        state2.UnsetCurrent()
+        state.UnsetCurrent()
     endif
 
-    return state2
+    return state
 enddef
 
 def Parent(path: string): string
@@ -268,11 +268,11 @@ def Update2(winid: number, dirpath: string): void
         return
     endif
 
-    const state2 = GetState2(winid)
-    const finfos = ListDir2(dirpath, state2.show_hidden)
-    state2.SetDirPath(dirpath)
-    state2.SetFileInfos(finfos)
-    SetState2(winid, state2)
+    const state = GetState2(winid)
+    const finfos = ListDir2(dirpath, state.show_hidden)
+    state.SetDirPath(dirpath)
+    state.SetFileInfos(finfos)
+    SetState2(winid, state)
 
     const display_names = mapnew(finfos, (_, info) => info.DisplayName())
     popup_settext(winid, display_names)
@@ -294,35 +294,35 @@ def Filter(winid: number, key: string): bool
 
     ClearCommandLine()
 
-    const state2 = GetState2(winid)
+    const state = GetState2(winid)
     var keep_key_stack = false
 
     if key == "\<Enter>" || key == "\<Space>"
-        DoOpen(state2)
+        DoOpen(state)
     elseif key == '-'
-         DoParentDir2(state2)
+         DoParentDir2(state)
     elseif key == "\<Home>"
         # <Home>: Move to first line
-        DoFirstLine2(state2)
-    elseif key == 'g' && state2.PeekKeyStack() == 'g'
+        DoFirstLine2(state)
+    elseif key == 'g' && state.PeekKeyStack() == 'g'
         # gg: Move to first line
-        DoFirstLine2(state2)
-    elseif key == 'j' && state2.PeekKeyStack() == 'g'
+        DoFirstLine2(state)
+    elseif key == 'j' && state.PeekKeyStack() == 'g'
         # gj: 10 lines downward
-        DoManyLines2(state2, 10, Direction.Forward)
-    elseif key == 'k' && state2.PeekKeyStack() == 'g'
+        DoManyLines2(state, 10, Direction.Forward)
+    elseif key == 'k' && state.PeekKeyStack() == 'g'
         # gk: 10 lines upward
-        DoManyLines2(state2, 10, Direction.Backward)
+        DoManyLines2(state, 10, Direction.Backward)
     elseif key == "\<End>"
         # <End>: Move to last line
-        DoLastLine2(state2)
+        DoLastLine2(state)
     elseif key == 'G'
         # G: Move to last line if no <count>, or move to <count> line
-        const num_arg = state2.NumArg()
+        const num_arg = state.NumArg()
         if num_arg > 0
-            DoLine2(state2, num_arg)
+            DoLine2(state, num_arg)
         else
-            DoLastLine2(state2)
+            DoLastLine2(state)
         endif
     elseif index(COMMAND_AS_IS, key) >= 0
         # j: <count> lines downward
@@ -332,54 +332,54 @@ def Filter(winid: number, key: string): bool
         # L: Line <count> from bottom of window
         # <C-F>: Page down
         # <C-B>: Page up
-        DoCommandAsIs2(state2, key)
-    elseif index(COMMAND_SCROLL_CURSOR, key) >= 0 && state2.PeekKeyStack() ==# 'z'
+        DoCommandAsIs2(state, key)
+    elseif index(COMMAND_SCROLL_CURSOR, key) >= 0 && state.PeekKeyStack() ==# 'z'
         # zz: Cursor line to center of window
         # zt: Cursor line to top of window
         # zb: Cursor line to bottom of window
-        DoCursorRelativeScroll2(state2, key)
+        DoCursorRelativeScroll2(state, key)
     elseif key == 'h'
         # h: Toggle display hidden files
-        DoToggleHidden2(state2)
+        DoToggleHidden2(state)
     elseif key == '%'
         # %: Create a new file and edit it
-        DoNewFile2(state2)
+        DoNewFile2(state)
     elseif key == 'D'
-        DoDelete2(state2)
+        DoDelete2(state)
     elseif key == '~'
         # ~: Go to home directory
-        DoHome2(state2)
+        DoHome2(state)
     elseif key == '/'
-        DoSearchForward2(state2)
+        DoSearchForward2(state)
     elseif key == '?'
-        DoSearchBackward2(state2)
+        DoSearchBackward2(state)
     elseif key == 'n'
-        DoRepeatSearch2(state2)
+        DoRepeatSearch2(state)
     elseif key == 'N'
-        DoRepeatSearchOpposite2(state2)
+        DoRepeatSearchOpposite2(state)
     elseif key == "\<C-L>"
-        DoRefresh2(state2)
+        DoRefresh2(state)
     elseif key == 'c'
-        DoChangeDirectory2(state2)
+        DoChangeDirectory2(state)
     elseif key == 'p'
-        DoPrevDir2(state2)
+        DoPrevDir2(state)
     elseif key == 'd'
-        DoNewDir2(state2)
+        DoNewDir2(state)
     elseif key == 'R'
-        DoRename2(state2)
+        DoRename2(state)
     elseif key == 'C'
-        DoCopyFile2(state2)
+        DoCopyFile2(state)
     elseif key == 'r'
-        DoView(state2)
+        DoView(state)
     elseif key =~ '[gz0-9]'
-        add(state2.key_stack, key)
+        add(state.key_stack, key)
         keep_key_stack = true
     else
-        popup_filter_menu(state2.winid, key)
+        popup_filter_menu(state.winid, key)
     endif
 
     if !keep_key_stack
-        state2.ClearKeyStack()
+        state.ClearKeyStack()
     endif
 
     return true
@@ -391,12 +391,12 @@ def ShowError(message: string): void
     echohl None
 enddef
 
-def DoOpen(state2: State): void
-    if !state2.HasCurrent()
+def DoOpen(state: State): void
+    if !state.HasCurrent()
         return
     endif
 
-    const finfo = state2.current
+    const finfo = state.current
     var path = finfo.Path()
     var ftype = finfo.ftype
 
@@ -406,10 +406,10 @@ def DoOpen(state2: State): void
     endif
 
     if ftype == 'file'
-        popup_close(state2.winid, -1)
+        popup_close(state.winid, -1)
         SafeEdit(path)
     elseif ftype == 'dir'
-        Update2(state2.winid, path)
+        Update2(state.winid, path)
     endif
 enddef
 
@@ -433,67 +433,67 @@ def SafeView(path: string): void
     execute $'silent view {safe}'
 enddef
 
-def DoParentDir2(state2: State): void
-    const name = fnamemodify(state2.dirpath, ':t')
-    Update2(state2.winid, Parent(state2.dirpath))
-    FindAndMove(state2, name)
+def DoParentDir2(state: State): void
+    const name = fnamemodify(state.dirpath, ':t')
+    Update2(state.winid, Parent(state.dirpath))
+    FindAndMove(state, name)
 enddef
 
-def DoFirstLine2(state2: State): void
-    win_execute(state2.winid, 'vim9 cursor(1, 1)')
+def DoFirstLine2(state: State): void
+    win_execute(state.winid, 'vim9 cursor(1, 1)')
 enddef
 
-def DoManyLines2(state2: State, n: number, direction: Direction): void
-    const count = state2.NumArg() ?? 1
+def DoManyLines2(state: State, n: number, direction: Direction): void
+    const count = state.NumArg() ?? 1
     const updown = (direction is Direction.Forward) ? 1 : -1
-    const cur = line('.', state2.winid)
+    const cur = line('.', state.winid)
     const lnum = max([1, cur + (n * count * updown)])
-    win_execute(state2.winid, $'vim9 cursor({lnum}, 1)')
+    win_execute(state.winid, $'vim9 cursor({lnum}, 1)')
 enddef
 
-def DoLastLine2(state2: State): void
-    win_execute(state2.winid, 'vim9 cursor("$", 1)')
+def DoLastLine2(state: State): void
+    win_execute(state.winid, 'vim9 cursor("$", 1)')
 enddef
 
-def DoLine2(state2: State, lnum: number): void
-    win_execute(state2.winid, $'vim9 cursor({lnum}, 1)')
+def DoLine2(state: State, lnum: number): void
+    win_execute(state.winid, $'vim9 cursor({lnum}, 1)')
 enddef
 
 # TODO: j, kにcursor()を使うとパフォーマンスが改善されるか確認
-def DoCommandAsIs2(state2: State, key: string): void
-    const count = state2.NumArg() ?? 1
-    win_execute(state2.winid, $':normal! {count}{key}')
+def DoCommandAsIs2(state: State, key: string): void
+    const count = state.NumArg() ?? 1
+    win_execute(state.winid, $':normal! {count}{key}')
 enddef
 
-def DoCursorRelativeScroll2(state2: State, key: string): void
-    win_execute(state2.winid, $':normal! z{key}')
+def DoCursorRelativeScroll2(state: State, key: string): void
+    win_execute(state.winid, $':normal! z{key}')
 enddef
 
-def DoToggleHidden2(state2: State): void
-    state2.SetShowHidden(!state2.show_hidden)
-    Update2(state2.winid, state2.dirpath)
+def DoToggleHidden2(state: State): void
+    state.SetShowHidden(!state.show_hidden)
+    Update2(state.winid, state.dirpath)
 enddef
 
-def DoNewFile2(state2: State): void
+def DoNewFile2(state: State): void
     const name = trim(input('New file: '))
     if empty(name)
         return
     endif
-    const path = $'{state2.dirpath}/{name}'
+    const path = $'{state.dirpath}/{name}'
     if !empty(glob(path))
         ShowError($'Failed to create a new file: "{path}" is already exists')
         return
     endif
-    popup_close(state2.winid, -1)
+    popup_close(state.winid, -1)
     SafeEdit(path)
 enddef
 
-def DoDelete2(state2: State): void
-    if !state2.HasCurrent()
+def DoDelete2(state: State): void
+    if !state.HasCurrent()
         return
     endif
 
-    const finfo = state2.current
+    const finfo = state.current
     const ftype = finfo.ftype
     var kind = ''
     var flags = ''
@@ -513,59 +513,59 @@ def DoDelete2(state2: State): void
         if result != 0
             ShowError($'Failed to delete the {kind}: {path}')
         endif
-        Update2(state2.winid, state2.dirpath)
+        Update2(state.winid, state.dirpath)
     endif
 enddef
 
-def DoHome2(state2: State): void
-    Update2(state2.winid, expand('~'))
+def DoHome2(state: State): void
+    Update2(state.winid, expand('~'))
 enddef
 
-def DoSearchForward2(state2: State): void
+def DoSearchForward2(state: State): void
     const pattern = input('/')
     if !empty(pattern)
-        state2.SetSearch(pattern, Direction.Forward)
+        state.SetSearch(pattern, Direction.Forward)
         const escaped = substitute(pattern, "'", "''", 'g')
         const command = printf("vim9 search('%s')", escaped)
-        win_execute(state2.winid, command)
+        win_execute(state.winid, command)
     endif
 enddef
 
-def DoSearchBackward2(state2: State): void
+def DoSearchBackward2(state: State): void
     const pattern = input('?')
     if !empty(pattern)
-        state2.SetSearch(pattern, Direction.Backward)
+        state.SetSearch(pattern, Direction.Backward)
         const escaped = substitute(pattern, "'", "''", 'g')
         const command = printf("vim9 search('%s', 'b')", escaped)
-        win_execute(state2.winid, command)
+        win_execute(state.winid, command)
     endif
 enddef
 
-def DoRepeatSearch2(state2: State): void
-    if !empty(state2.search)
-        const [pattern, direction] = state2.search
+def DoRepeatSearch2(state: State): void
+    if !empty(state.search)
+        const [pattern, direction] = state.search
         const flag = direction.search_flag
         const escaped = substitute(pattern, "'", "''", 'g')
         const command = printf("vim9 search('%s', '%s')", escaped, flag)
-        win_execute(state2.winid, command)
+        win_execute(state.winid, command)
     endif
 enddef
 
-def DoRepeatSearchOpposite2(state2: State): void
-    if !empty(state2.search)
-        const [pattern, direction] = state2.search
+def DoRepeatSearchOpposite2(state: State): void
+    if !empty(state.search)
+        const [pattern, direction] = state.search
         const flag = direction.Opposite().search_flag
         const escaped = substitute(pattern, "'", "''", 'g')
         const command = printf("vim9 search('%s', '%s')", escaped, flag)
-        win_execute(state2.winid, command)
+        win_execute(state.winid, command)
     endif
 enddef
 
-def DoRefresh2(state2: State): void
-    Update2(state2.winid, state2.dirpath)
+def DoRefresh2(state: State): void
+    Update2(state.winid, state.dirpath)
 enddef
 
-def DoChangeDirectory2(state2: State): void
+def DoChangeDirectory2(state: State): void
     const dirpath = expand(trim(input('Change directory: ', '', 'dir')))
     if empty(dirpath)
         return
@@ -574,11 +574,11 @@ def DoChangeDirectory2(state2: State): void
         ShowError($'No such directory: {dirpath}')
         return
     endif
-    Update2(state2.winid, dirpath)
+    Update2(state.winid, dirpath)
 enddef
 
-def DoPrevDir2(state2: State): void
-    const prev_dirpath = state2.prev_dirpath
+def DoPrevDir2(state: State): void
+    const prev_dirpath = state.prev_dirpath
     if empty(prev_dirpath)
         return
     endif
@@ -586,16 +586,16 @@ def DoPrevDir2(state2: State): void
         ShowError($'No such directory: {prev_dirpath}')
         return
     endif
-    Update2(state2.winid, prev_dirpath)
+    Update2(state.winid, prev_dirpath)
 enddef
 
-def DoNewDir2(state2: State): void
+def DoNewDir2(state: State): void
     const name = trim(input('New directory: '))
     if empty(name)
         return
     endif
 
-    const path = $'{state2.dirpath}/{name}'
+    const path = $'{state.dirpath}/{name}'
     if !empty(glob(path))
         ShowError($'Failed to create directory: "{path}" is already exists')
         return
@@ -607,16 +607,16 @@ def DoNewDir2(state2: State): void
         return
     endif
 
-    Update2(state2.winid, state2.dirpath)
-    FindAndMove(state2, name)
+    Update2(state.winid, state.dirpath)
+    FindAndMove(state, name)
 enddef
 
-def DoRename2(state2: State): void
-    if !state2.HasCurrent()
+def DoRename2(state: State): void
+    if !state.HasCurrent()
         return
     endif
 
-    const finfo = state2.current
+    const finfo = state.current
     const ftype = finfo.ftype
     var kind = ''
     if ftype == 'file' || ftype == 'socket' || ftype == 'fifo'
@@ -639,20 +639,20 @@ def DoRename2(state2: State): void
         return
     endif
 
-    Update2(state2.winid, state2.dirpath)
+    Update2(state.winid, state.dirpath)
 
     if Parent(from) == Parent(to)
         const to_name = fnamemodify(to, ':t')
-        FindAndMove(state2, to_name)
+        FindAndMove(state, to_name)
     endif
 enddef
 
-def DoCopyFile2(state2: State): void
-    if !state2.HasCurrent()
+def DoCopyFile2(state: State): void
+    if !state.HasCurrent()
         return
     endif
 
-    const finfo = state2.current
+    const finfo = state.current
     const ftype = finfo.ftype
     if ftype == 'dir'
         return
@@ -670,28 +670,28 @@ def DoCopyFile2(state2: State): void
         return
     endif
 
-    Update2(state2.winid, state2.dirpath)
+    Update2(state.winid, state.dirpath)
 
     if Parent(from) == Parent(to)
         const to_name = fnamemodify(to, ':t')
-        FindAndMove(state2, to_name)
+        FindAndMove(state, to_name)
     endif
 enddef
 
-def FindAndMove(state2: State, name: string)
-    const index = indexof(state2.file_infos,  (i, finfo) => finfo.name == name)
+def FindAndMove(state: State, name: string)
+    const index = indexof(state.file_infos,  (i, finfo) => finfo.name == name)
     if index != -1
-        win_execute(state2.winid, $'vim9 cursor({index + 1}, 1)')
-        state2.SetCurrent(index)
+        win_execute(state.winid, $'vim9 cursor({index + 1}, 1)')
+        state.SetCurrent(index)
     endif
 enddef
 
-def DoView(state2: State): void
-    if !state2.HasCurrent()
+def DoView(state: State): void
+    if !state.HasCurrent()
         return
     endif
 
-    const finfo = state2.current
+    const finfo = state.current
     var path = finfo.Path()
     var ftype = finfo.ftype
     if ftype == 'link'
@@ -700,9 +700,9 @@ def DoView(state2: State): void
     endif
 
     if ftype == 'file'
-        popup_close(state2.winid, -1)
+        popup_close(state.winid, -1)
         SafeView(path)
     elseif ftype == 'dir'
-        Update2(state2.winid, path)
+        Update2(state.winid, path)
     endif
 enddef
