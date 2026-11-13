@@ -30,7 +30,7 @@ export def Open(path: string = ''): void
         extend(options, g:popdir_options)
     endif
 
-    const finfos = ListDir2(dirpath, options.show_hidden)
+    const finfos = ListDir(dirpath, options.show_hidden)
     const display_names = mapnew(finfos, (_, info) => info.DisplayName())
     const winid = popup_menu(display_names, {
         maxheight: 40,
@@ -244,12 +244,7 @@ def Compare2(a: FileInfo, b: FileInfo): number
     endif
 enddef
 
-def ListDir(dirpath: string, hidden: bool = false): list<string>
-    final names = map(readdir(dirpath), (_, name) => name .. Suffix(dirpath, name))
-    return sort(filter(names, (_, name) => hidden || name[0] != '.'), Compare)
-enddef
-
-def ListDir2(dirpath: string, hidden: bool = false): list<FileInfo>
+def ListDir(dirpath: string, hidden: bool = false): list<FileInfo>
     final finfos: list<FileInfo> = []
     for [i, name] in items(readdir(dirpath))
         const ftype = getftype($'{dirpath}/{name}')
@@ -269,7 +264,7 @@ def Update2(winid: number, dirpath: string): void
     endif
 
     const state = GetState2(winid)
-    const finfos = ListDir2(dirpath, state.show_hidden)
+    const finfos = ListDir(dirpath, state.show_hidden)
     state.SetDirPath(dirpath)
     state.SetFileInfos(finfos)
     SetState2(winid, state)
