@@ -45,7 +45,7 @@ export def Open(path: string = ''): void
     })
 
     const state = State.new(winid, dirpath, finfos, options.show_hidden)
-    SetState2(winid, state)
+    SetState(winid, state)
 enddef
 
 enum Direction
@@ -146,7 +146,7 @@ class State
     enddef
 endclass
 
-def SetState2(winid: number, state: State): void
+def SetState(winid: number, state: State): void
     setwinvar(winid, 'state', state)
 enddef
 
@@ -267,7 +267,7 @@ def Update2(winid: number, dirpath: string): void
     const finfos = ListDir(dirpath, state.show_hidden)
     state.SetDirPath(dirpath)
     state.SetFileInfos(finfos)
-    SetState2(winid, state)
+    SetState(winid, state)
 
     const display_names = mapnew(finfos, (_, info) => info.DisplayName())
     popup_settext(winid, display_names)
