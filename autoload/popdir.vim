@@ -150,7 +150,7 @@ def SetState(winid: number, state: State): void
     setwinvar(winid, 'state', state)
 enddef
 
-def GetState2(winid: number): State
+def GetState(winid: number): State
     final state = getwinvar(winid, 'state', null)
     if state == null
         throw $'failed to get state: winid={winid}'
@@ -263,7 +263,7 @@ def Update2(winid: number, dirpath: string): void
         return
     endif
 
-    const state = GetState2(winid)
+    const state = GetState(winid)
     const finfos = ListDir(dirpath, state.show_hidden)
     state.SetDirPath(dirpath)
     state.SetFileInfos(finfos)
@@ -289,7 +289,7 @@ def Filter(winid: number, key: string): bool
 
     ClearCommandLine()
 
-    const state = GetState2(winid)
+    const state = GetState(winid)
     var keep_key_stack = false
 
     if key == "\<Enter>" || key == "\<Space>"
