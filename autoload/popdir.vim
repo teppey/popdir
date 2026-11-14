@@ -203,29 +203,7 @@ def Suffix(dirpath: string, name: string): string
     endif
 enddef
 
-def Compare(a: string, b: string): number
-    const a_is_dir = a[-1 :] == '/'
-    const b_is_dir = b[-1 :] == '/'
-
-    const a_trimmed = TrimSlash(a)
-    const b_trimmed = TrimSlash(b)
-
-    if a_is_dir && !b_is_dir
-        return -1
-    elseif !a_is_dir && b_is_dir
-        return 1
-    endif
-
-    if a_trimmed == b_trimmed
-        return 0
-    elseif a_trimmed < b_trimmed
-        return -1
-    else
-        return 1
-    endif
-enddef
-
-def Compare2(a: FileInfo, b: FileInfo): number
+def Compare(a: FileInfo, b: FileInfo): number
     const a_is_dir = a.ftype == 'dir'
     const b_is_dir = b.ftype == 'dir'
 
@@ -254,7 +232,7 @@ def ListDir(dirpath: string, hidden: bool = false): list<FileInfo>
         endif
     endfor
 
-    return sort(finfos, Compare2)
+    return sort(finfos, Compare)
 enddef
 
 def Update2(winid: number, dirpath: string): void
