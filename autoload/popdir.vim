@@ -235,7 +235,7 @@ def ListDir(dirpath: string, hidden: bool = false): list<FileInfo>
     return sort(finfos, Compare)
 enddef
 
-def Update2(winid: number, dirpath: string): void
+def Update(winid: number, dirpath: string): void
     if !isdirectory(dirpath)
         ShowError($'"{dirpath}" is not a directory')
         return
@@ -382,7 +382,7 @@ def DoOpen(state: State): void
         popup_close(state.winid, -1)
         SafeEdit(path)
     elseif ftype == 'dir'
-        Update2(state.winid, path)
+        Update(state.winid, path)
     endif
 enddef
 
@@ -408,7 +408,7 @@ enddef
 
 def DoParentDir2(state: State): void
     const name = fnamemodify(state.dirpath, ':t')
-    Update2(state.winid, Parent(state.dirpath))
+    Update(state.winid, Parent(state.dirpath))
     FindAndMove(state, name)
 enddef
 
@@ -444,7 +444,7 @@ enddef
 
 def DoToggleHidden2(state: State): void
     state.SetShowHidden(!state.show_hidden)
-    Update2(state.winid, state.dirpath)
+    Update(state.winid, state.dirpath)
 enddef
 
 def DoNewFile2(state: State): void
@@ -486,12 +486,12 @@ def DoDelete2(state: State): void
         if result != 0
             ShowError($'Failed to delete the {kind}: {path}')
         endif
-        Update2(state.winid, state.dirpath)
+        Update(state.winid, state.dirpath)
     endif
 enddef
 
 def DoHome2(state: State): void
-    Update2(state.winid, expand('~'))
+    Update(state.winid, expand('~'))
 enddef
 
 def DoSearchForward2(state: State): void
@@ -535,7 +535,7 @@ def DoRepeatSearchOpposite2(state: State): void
 enddef
 
 def DoRefresh2(state: State): void
-    Update2(state.winid, state.dirpath)
+    Update(state.winid, state.dirpath)
 enddef
 
 def DoChangeDirectory2(state: State): void
@@ -547,7 +547,7 @@ def DoChangeDirectory2(state: State): void
         ShowError($'No such directory: {dirpath}')
         return
     endif
-    Update2(state.winid, dirpath)
+    Update(state.winid, dirpath)
 enddef
 
 def DoPrevDir2(state: State): void
@@ -559,7 +559,7 @@ def DoPrevDir2(state: State): void
         ShowError($'No such directory: {prev_dirpath}')
         return
     endif
-    Update2(state.winid, prev_dirpath)
+    Update(state.winid, prev_dirpath)
 enddef
 
 def DoNewDir2(state: State): void
@@ -580,7 +580,7 @@ def DoNewDir2(state: State): void
         return
     endif
 
-    Update2(state.winid, state.dirpath)
+    Update(state.winid, state.dirpath)
     FindAndMove(state, name)
 enddef
 
@@ -612,7 +612,7 @@ def DoRename2(state: State): void
         return
     endif
 
-    Update2(state.winid, state.dirpath)
+    Update(state.winid, state.dirpath)
 
     if Parent(from) == Parent(to)
         const to_name = fnamemodify(to, ':t')
@@ -643,7 +643,7 @@ def DoCopyFile2(state: State): void
         return
     endif
 
-    Update2(state.winid, state.dirpath)
+    Update(state.winid, state.dirpath)
 
     if Parent(from) == Parent(to)
         const to_name = fnamemodify(to, ':t')
@@ -676,6 +676,6 @@ def DoView(state: State): void
         popup_close(state.winid, -1)
         SafeView(path)
     elseif ftype == 'dir'
-        Update2(state.winid, path)
+        Update(state.winid, path)
     endif
 enddef
