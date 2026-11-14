@@ -273,7 +273,7 @@ def Filter(winid: number, key: string): bool
     if key == "\<Enter>" || key == "\<Space>"
         DoOpen(state)
     elseif key == '-'
-         DoParentDir2(state)
+         DoParentDir(state)
     elseif key == "\<Home>"
         # <Home>: Move to first line
         DoFirstLine2(state)
@@ -406,7 +406,7 @@ def SafeView(path: string): void
     execute $'silent view {safe}'
 enddef
 
-def DoParentDir2(state: State): void
+def DoParentDir(state: State): void
     const name = fnamemodify(state.dirpath, ':t')
     Update(state.winid, Parent(state.dirpath))
     FindAndMove(state, name)
