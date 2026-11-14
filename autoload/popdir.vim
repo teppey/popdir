@@ -276,10 +276,10 @@ def Filter(winid: number, key: string): bool
          DoParentDir(state)
     elseif key == "\<Home>"
         # <Home>: Move to first line
-        DoFirstLine2(state)
+        DoTop(state)
     elseif key == 'g' && state.PeekKeyStack() == 'g'
         # gg: Move to first line
-        DoFirstLine2(state)
+        DoTop(state)
     elseif key == 'j' && state.PeekKeyStack() == 'g'
         # gj: 10 lines downward
         DoManyLines2(state, 10, Direction.Forward)
@@ -412,7 +412,7 @@ def DoParentDir(state: State): void
     FindAndMove(state, name)
 enddef
 
-def DoFirstLine2(state: State): void
+def DoTop(state: State): void
     win_execute(state.winid, 'vim9 cursor(1, 1)')
 enddef
 
