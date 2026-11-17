@@ -288,14 +288,14 @@ def Filter(winid: number, key: string): bool
         DoUpDown(state, -10)
     elseif key == "\<End>"
         # <End>: Move to last line
-        DoLastLine2(state)
+        DoBottom(state)
     elseif key == 'G'
         # G: Move to last line if no <count>, or move to <count> line
         const num_arg = state.NumArg()
         if num_arg > 0
             DoLine2(state, num_arg)
         else
-            DoLastLine2(state)
+            DoBottom(state)
         endif
     elseif index(COMMAND_AS_IS, key) >= 0
         # j: <count> lines downward
@@ -423,7 +423,7 @@ def DoUpDown(state: State, n: number): void
     win_execute(state.winid, $'vim9 cursor({lnum}, 1)')
 enddef
 
-def DoLastLine2(state: State): void
+def DoBottom(state: State): void
     win_execute(state.winid, 'vim9 cursor("$", 1)')
 enddef
 
