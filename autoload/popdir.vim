@@ -257,7 +257,7 @@ def ClearCommandLine(): void
     echo ''
 enddef
 
-const COMMAND_AS_IS = ['j', 'k', 'H', 'L', 'M', "\<C-F>", "\<C-B>"]
+const COMMAND_AS_IS = ['H', 'L', 'M', "\<C-F>", "\<C-B>"]
 const COMMAND_SCROLL_CURSOR = ['z', 't', 'b']
 
 def Filter(winid: number, key: string): bool
@@ -297,9 +297,13 @@ def Filter(winid: number, key: string): bool
         else
             DoBottom(state)
         endif
-    elseif index(COMMAND_AS_IS, key) >= 0
+    elseif key == 'j'
         # j: <count> lines downward
-        # k: <count lines upward
+        DoUpDown(state, 1)
+    elseif key == 'k'
+        # k: <count> lines upward
+        DoUpDown(state, -1)
+    elseif index(COMMAND_AS_IS, key) >= 0
         # H: Line <count> from top of window
         # M: Middle line of window
         # L: Line <count> from bottom of window
@@ -431,7 +435,6 @@ def DoGoToLine(state: State, lnum: number): void
     win_execute(state.winid, $'vim9 cursor({lnum}, 1)')
 enddef
 
-# TODO: j, kにcursor()を使うとパフォーマンスが改善されるか確認
 def DoCommandAsIs(state: State, key: string): void
     const count = state.NumArg() ?? 1
     win_execute(state.winid, $':normal! {count}{key}')
