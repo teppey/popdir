@@ -317,7 +317,7 @@ def Filter(winid: number, key: string): bool
         DoCursorRelativeScroll(state, key)
     elseif key == 'h'
         # h: Toggle display hidden files
-        DoToggleHidden2(state)
+        DoToggleHidden(state)
     elseif key == '%'
         # %: Create a new file and edit it
         DoNewFile2(state)
@@ -444,7 +444,7 @@ def DoCursorRelativeScroll(state: State, key: string): void
     win_execute(state.winid, $':normal! z{key}')
 enddef
 
-def DoToggleHidden2(state: State): void
+def DoToggleHidden(state: State): void
     state.SetShowHidden(!state.show_hidden)
     Update(state.winid, state.dirpath)
 enddef
