@@ -305,7 +305,7 @@ def Filter(winid: number, key: string): bool
         # L: Line <count> from bottom of window
         # <C-F>: Page down
         # <C-B>: Page up
-        DoCommandAsIs2(state, key)
+        DoCommandAsIs(state, key)
     elseif index(COMMAND_SCROLL_CURSOR, key) >= 0 && state.PeekKeyStack() ==# 'z'
         # zz: Cursor line to center of window
         # zt: Cursor line to top of window
@@ -432,7 +432,7 @@ def DoGoToLine(state: State, lnum: number): void
 enddef
 
 # TODO: j, kにcursor()を使うとパフォーマンスが改善されるか確認
-def DoCommandAsIs2(state: State, key: string): void
+def DoCommandAsIs(state: State, key: string): void
     const count = state.NumArg() ?? 1
     win_execute(state.winid, $':normal! {count}{key}')
 enddef
