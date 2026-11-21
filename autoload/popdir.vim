@@ -293,7 +293,7 @@ def Filter(winid: number, key: string): bool
         # G: Move to last line if no <count>, or move to <count> line
         const num_arg = state.NumArg()
         if num_arg > 0
-            DoLine2(state, num_arg)
+            DoGoToLine(state, num_arg)
         else
             DoBottom(state)
         endif
@@ -427,7 +427,7 @@ def DoBottom(state: State): void
     win_execute(state.winid, 'vim9 cursor("$", 1)')
 enddef
 
-def DoLine2(state: State, lnum: number): void
+def DoGoToLine(state: State, lnum: number): void
     win_execute(state.winid, $'vim9 cursor({lnum}, 1)')
 enddef
 
