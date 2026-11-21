@@ -30,8 +30,8 @@ export def Open(path: string = ''): void
         extend(options, g:popdir_options)
     endif
 
-    const finfos = ListDir(dirpath, options.show_hidden)
-    const display_names = mapnew(finfos, (_, info) => info.DisplayName())
+    const file_infos = ListDir(dirpath, options.show_hidden)
+    const display_names = DisplayNames(file_infos)
     const winid = popup_menu(display_names, {
         maxheight: 40,
         minheight: 30,
@@ -44,7 +44,7 @@ export def Open(path: string = ''): void
         filter: Filter,
     })
 
-    const state = State.new(winid, dirpath, finfos, options.show_hidden)
+    const state = State.new(winid, dirpath, file_infos, options.show_hidden)
     SetState(winid, state)
 enddef
 
@@ -170,6 +170,10 @@ def GetState(winid: number): State
     return state
 enddef
 
+def DisplayNames(file_infos: list<FileInfo>): list<string>
+    return mapnew(file_infos, (_, fi) => fi.DisplayName())
+enddef
+
 def Parent(path: string): string
     return fnamemodify(path, ':h')
 enddef
@@ -242,12 +246,12 @@ def Update(winid: number, dirpath: string): void
     endif
 
     const state = GetState(winid)
-    const finfos = ListDir(dirpath, state.show_hidden)
+    const file_infos = ListDir(dirpath, state.show_hidden)
     state.SetDirPath(dirpath)
-    state.SetFileInfos(finfos)
+    state.SetFileInfos(file_infos)
     SetState(winid, state)
 
-    const display_names = mapnew(finfos, (_, info) => info.DisplayName())
+    const display_names = DisplayNames(file_infos)
     popup_settext(winid, display_names)
     popup_setoptions(winid, { title: Title(dirpath) })
     win_execute(winid, 'vim9 cursor(1, 1)')
