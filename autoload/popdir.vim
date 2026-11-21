@@ -320,32 +320,32 @@ def Filter(winid: number, key: string): bool
         DoToggleHidden(state)
     elseif key == '%'
         # %: Create a new file and edit it
-        DoNewFile2(state)
+        DoNewFile(state)
     elseif key == 'D'
-        DoDelete2(state)
+        DoDelete(state)
     elseif key == '~'
         # ~: Go to home directory
-        DoHome2(state)
+        DoHome(state)
     elseif key == '/'
-        DoSearchForward2(state)
+        DoSearchForward(state)
     elseif key == '?'
-        DoSearchBackward2(state)
+        DoSearchBackward(state)
     elseif key == 'n'
-        DoRepeatSearch2(state)
+        DoRepeatSearch(state)
     elseif key == 'N'
-        DoRepeatSearchOpposite2(state)
+        DoRepeatSearchOpposite(state)
     elseif key == "\<C-L>"
-        DoRefresh2(state)
+        DoRefresh(state)
     elseif key == 'c'
-        DoChangeDirectory2(state)
+        DoChangeDirectory(state)
     elseif key == 'p'
-        DoPrevDir2(state)
+        DoPrevDir(state)
     elseif key == 'd'
-        DoNewDir2(state)
+        DoNewDir(state)
     elseif key == 'R'
-        DoRename2(state)
+        DoRename(state)
     elseif key == 'C'
-        DoCopyFile2(state)
+        DoCopyFile(state)
     elseif key == 'r'
         DoView(state)
     elseif key =~ '[gz0-9]'
@@ -449,7 +449,7 @@ def DoToggleHidden(state: State): void
     Update(state.winid, state.dirpath)
 enddef
 
-def DoNewFile2(state: State): void
+def DoNewFile(state: State): void
     const name = trim(input('New file: '))
     if empty(name)
         return
@@ -463,7 +463,7 @@ def DoNewFile2(state: State): void
     SafeEdit(path)
 enddef
 
-def DoDelete2(state: State): void
+def DoDelete(state: State): void
     if !state.HasCurrent()
         return
     endif
@@ -492,11 +492,11 @@ def DoDelete2(state: State): void
     endif
 enddef
 
-def DoHome2(state: State): void
+def DoHome(state: State): void
     Update(state.winid, expand('~'))
 enddef
 
-def DoSearchForward2(state: State): void
+def DoSearchForward(state: State): void
     const pattern = input('/')
     if !empty(pattern)
         state.SetSearch(pattern, Direction.Forward)
@@ -506,7 +506,7 @@ def DoSearchForward2(state: State): void
     endif
 enddef
 
-def DoSearchBackward2(state: State): void
+def DoSearchBackward(state: State): void
     const pattern = input('?')
     if !empty(pattern)
         state.SetSearch(pattern, Direction.Backward)
@@ -516,7 +516,7 @@ def DoSearchBackward2(state: State): void
     endif
 enddef
 
-def DoRepeatSearch2(state: State): void
+def DoRepeatSearch(state: State): void
     if !empty(state.search)
         const [pattern, direction] = state.search
         const flag = direction.search_flag
@@ -526,7 +526,7 @@ def DoRepeatSearch2(state: State): void
     endif
 enddef
 
-def DoRepeatSearchOpposite2(state: State): void
+def DoRepeatSearchOpposite(state: State): void
     if !empty(state.search)
         const [pattern, direction] = state.search
         const flag = direction.Opposite().search_flag
@@ -536,11 +536,11 @@ def DoRepeatSearchOpposite2(state: State): void
     endif
 enddef
 
-def DoRefresh2(state: State): void
+def DoRefresh(state: State): void
     Update(state.winid, state.dirpath)
 enddef
 
-def DoChangeDirectory2(state: State): void
+def DoChangeDirectory(state: State): void
     const dirpath = expand(trim(input('Change directory: ', '', 'dir')))
     if empty(dirpath)
         return
@@ -552,7 +552,7 @@ def DoChangeDirectory2(state: State): void
     Update(state.winid, dirpath)
 enddef
 
-def DoPrevDir2(state: State): void
+def DoPrevDir(state: State): void
     const prev_dirpath = state.prev_dirpath
     if empty(prev_dirpath)
         return
@@ -564,7 +564,7 @@ def DoPrevDir2(state: State): void
     Update(state.winid, prev_dirpath)
 enddef
 
-def DoNewDir2(state: State): void
+def DoNewDir(state: State): void
     const name = trim(input('New directory: '))
     if empty(name)
         return
@@ -586,7 +586,7 @@ def DoNewDir2(state: State): void
     FindAndMove(state, name)
 enddef
 
-def DoRename2(state: State): void
+def DoRename(state: State): void
     if !state.HasCurrent()
         return
     endif
@@ -622,7 +622,7 @@ def DoRename2(state: State): void
     endif
 enddef
 
-def DoCopyFile2(state: State): void
+def DoCopyFile(state: State): void
     if !state.HasCurrent()
         return
     endif
