@@ -5,8 +5,11 @@ vim9script
 # Author: Teppei Hamada <temada@gmail.com>
 # Version: 0.1
 
-const POPDIR_DEFAULT_OPTIONS = {
+const POPDIR_DEFAULT_OPTIONS: dict<any> = {
     show_hidden: false,
+    maxheight: 40,
+    minheight: 30,
+    minwidth: 26,
 }
 
 export def Open(path: string = ''): void
@@ -33,9 +36,9 @@ export def Open(path: string = ''): void
     const file_infos = ListDir(dirpath, options.show_hidden)
     const display_names = DisplayNames(file_infos)
     const winid = popup_menu(display_names, {
-        maxheight: 40,
-        minheight: 30,
-        minwidth: 26,
+        maxheight: options.maxheight,
+        minheight: options.minheight,
+        minwidth: options.minwidth,
         pos: 'topleft',
         line: 'cursor+1',
         col: 'cursor+1',
