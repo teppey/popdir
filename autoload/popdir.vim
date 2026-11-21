@@ -314,7 +314,7 @@ def Filter(winid: number, key: string): bool
         # zz: Cursor line to center of window
         # zt: Cursor line to top of window
         # zb: Cursor line to bottom of window
-        DoCursorRelativeScroll2(state, key)
+        DoCursorRelativeScroll(state, key)
     elseif key == 'h'
         # h: Toggle display hidden files
         DoToggleHidden2(state)
@@ -440,7 +440,7 @@ def DoCommandAsIs(state: State, key: string): void
     win_execute(state.winid, $':normal! {count}{key}')
 enddef
 
-def DoCursorRelativeScroll2(state: State, key: string): void
+def DoCursorRelativeScroll(state: State, key: string): void
     win_execute(state.winid, $':normal! z{key}')
 enddef
 
