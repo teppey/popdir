@@ -509,23 +509,30 @@ def DoHome(state: State): void
     Update(state.winid, expand('~'))
 enddef
 
+
+def EscapeSingleQuote(s: string): string
+    return substitute(s, "'", "''", 'g')
+enddef
+
+def Search(state: State, pattern: string, direction: Direction, flags: string): void
+    state.SetSearch(pattern, direction)
+    const ePattern = EscapeSingleQuote(pattern)
+    const eFlags = EscapeSingleQuote(flags)
+    const command = printf("vim9 search('%s', '%s')", ePattern, eFlags)
+    win_execute(state.winid, command)
+enddef
+
 def DoSearchForward(state: State): void
     const pattern = input('/')
     if !empty(pattern)
-        state.SetSearch(pattern, Direction.Forward)
-        const escaped = substitute(pattern, "'", "''", 'g')
-        const command = printf("vim9 search('%s')", escaped)
-        win_execute(state.winid, command)
+        Search(state, pattern, Direction.Forward, '')
     endif
 enddef
 
 def DoSearchBackward(state: State): void
     const pattern = input('?')
     if !empty(pattern)
-        state.SetSearch(pattern, Direction.Backward)
-        const escaped = substitute(pattern, "'", "''", 'g')
-        const command = printf("vim9 search('%s', 'b')", escaped)
-        win_execute(state.winid, command)
+        Search(state, pattern, Direction.Backward, 'b')
     endif
 enddef
 
@@ -533,9 +540,7 @@ def DoRepeatSearch(state: State): void
     if !empty(state.search)
         const [pattern, direction] = state.search
         const flag = direction.search_flag
-        const escaped = substitute(pattern, "'", "''", 'g')
-        const command = printf("vim9 search('%s', '%s')", escaped, flag)
-        win_execute(state.winid, command)
+        Search(state, pattern, direction, flag)
     endif
 enddef
 
@@ -543,9 +548,7 @@ def DoRepeatSearchOpposite(state: State): void
     if !empty(state.search)
         const [pattern, direction] = state.search
         const flag = direction.Opposite().search_flag
-        const escaped = substitute(pattern, "'", "''", 'g')
-        const command = printf("vim9 search('%s', '%s')", escaped, flag)
-        win_execute(state.winid, command)
+        Search(state, pattern, direction, flag)
     endif
 enddef
 
