@@ -92,6 +92,18 @@ class FileInfo
             return ''
         endif
     enddef
+
+    def Resolve(): FileInfo
+        if this.ftype == 'link'
+            const path = resolve(this.Path())
+            const dirpath = Parent(path)
+            const name = fnamemodify(path, ':t')
+            const ftype = getftype(path)
+            return FileInfo.new(dirpath, name, ftype)
+        else
+            return this
+        endif
+    enddef
 endclass
 
 class State
@@ -380,15 +392,9 @@ def DoOpen(state: State): void
         return
     endif
 
-    const finfo = state.current
+    const finfo = state.current.Resolve()
     var path = finfo.Path()
     var ftype = finfo.ftype
-
-    if ftype == 'link'
-        path = resolve(path)
-        ftype = getftype(path)
-    endif
-
     if ftype == 'file'
         popup_close(state.winid, -1)
         SafeEdit(path)
@@ -673,14 +679,9 @@ def DoView(state: State): void
         return
     endif
 
-    const finfo = state.current
+    const finfo = state.current.Resolve()
     var path = finfo.Path()
     var ftype = finfo.ftype
-    if ftype == 'link'
-        path = resolve(path)
-        ftype = getftype(path)
-    endif
-
     if ftype == 'file'
         popup_close(state.winid, -1)
         SafeView(path)
