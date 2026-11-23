@@ -514,9 +514,13 @@ def EscapeSingleQuote(s: string): string
     return substitute(s, "'", "''", 'g')
 enddef
 
+def EnsureMatchEndOfLine(pattern: string): string
+    return trim(pattern, '$', 2) .. '.*$'
+enddef
+
 def Search(state: State, pattern: string, direction: Direction, flags: string): void
     state.SetSearch(pattern, direction)
-    const ePattern = EscapeSingleQuote(pattern)
+    const ePattern = EscapeSingleQuote(EnsureMatchEndOfLine(pattern))
     const eFlags = EscapeSingleQuote(flags)
     const command = printf("vim9 search('%s', '%s')", ePattern, eFlags)
     win_execute(state.winid, command)
